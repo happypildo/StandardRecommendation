@@ -11,16 +11,25 @@ from selenium.webdriver.common.by import By                     # find_element �
 
 import requests
 
-STANDARD_LINK_LEFT = "https://portal.3gpp.org/Specifications.aspx?q=1&"
-STANDARD_LINK_RIGHT = "&releases=all&draft=False&underCC=False&withACC=False&withBCC=False&numberNYA=False"
+from convert_docs_to_pdf import Unzip
+
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
-series_num = 38 - 6
-STANDARD_LINK_MID = f"series={series_num}"
-
 # 표준 사이트 입장
-driver.get(STANDARD_LINK_LEFT + STANDARD_LINK_MID + STANDARD_LINK_RIGHT)
+driver.get("https://portal.3gpp.org/Specifications.aspx?q=1&series=0&releases=all&draft=False&underCC=False&withACC=False&withBCC=False&numberNYA=False")
+
+# 시리즈 별 요소 확인
+drop_down_a = driver.find_element(By.ID, "dnn_ctr593_SpecificationsList_rpbSpecSearch_i0_rcbSeries_Arrow")
+drop_down_a.click()
+drop_down_div = driver.find_element(By.ID, "dnn_ctr593_SpecificationsList_rpbSpecSearch_i0_rcbSeries_DropDown")
+labels = drop_down_div.find_elements(By.CSS_SELECTOR, "li > label")
+series_dict = {}
+
+for idx, label in enumerate(labels):
+    print(label.text, "************************")
+    series_num = int(label.text.split('.')[0])
+    series_dict[series_num] = (idx, label.text)
 
 # 나와 있는 series 행 별로 다운로드 진행
 amount_of_standards = int(driver.find_element(By.CSS_SELECTOR, ".rgWrap.rgInfoPart").text.split()[0])
@@ -69,3 +78,5 @@ for i in range(0, amount_of_standards, amount_of_hopping):
     driver.find_element(By.CLASS_NAME, "rgPageNext").click()
 
     print(f"\tNow...............[{web_cnt * amount_of_hopping}/{amount_of_standards}]")
+
+print("")
