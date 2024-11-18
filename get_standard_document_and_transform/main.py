@@ -8,11 +8,16 @@ from webdriver_manager.chrome import ChromeDriverManager        # 크롬 드라�
 from selenium.webdriver.chrome.service import Service           # 자동적 접근
 from selenium.webdriver.chrome.options import Options           # 크롭 드라이버 옵션 지정
 from selenium.webdriver.common.by import By                     # find_element 함수 쉽게 쓰기 위함
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 import requests
+import os
 
 from convert_docs_to_pdf import Unzip
 
+print("Enter the series number to analysis: ", end="")
+target_series = int(input())
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
@@ -23,60 +28,84 @@ driver.get("https://portal.3gpp.org/Specifications.aspx?q=1&series=0&releases=al
 drop_down_a = driver.find_element(By.ID, "dnn_ctr593_SpecificationsList_rpbSpecSearch_i0_rcbSeries_Arrow")
 drop_down_a.click()
 drop_down_div = driver.find_element(By.ID, "dnn_ctr593_SpecificationsList_rpbSpecSearch_i0_rcbSeries_DropDown")
-labels = drop_down_div.find_elements(By.CSS_SELECTOR, "li > label")
+labels = drop_down_div.find_elements(By.CSS_SELECTOR, "ul > li > label")
 series_dict = {}
 
 for idx, label in enumerate(labels):
-    print(label.text, "************************")
-    series_num = int(label.text.split('.')[0])
+    WebDriverWait(driver, 10).until(lambda driver: label.text.strip() != "")
+    series_num = int(labels[idx].text.split('.')[0])
     series_dict[series_num] = (idx, label.text)
 
-# 나와 있는 series 행 별로 다운로드 진행
-amount_of_standards = int(driver.find_element(By.CSS_SELECTOR, ".rgWrap.rgInfoPart").text.split()[0])
-amount_of_hopping = int(driver.find_element(By.CSS_SELECTOR, ".rgWrap.rgInfoPart").text.split()[-1])
+# 여기 수정해야 함 -> 원하는 시리즈로 갈 수 있게.
+if series_dict.get(target_series, None) is None:
+    print(f"There is no series with number {target_series}")
+else:
+    idx, target_series_title = series_dict[target_series]
 
-print("Downloading documents...")
-print(f"   The amount of standards to download: {amount_of_standards} with hopping {amount_of_hopping}.")
-web_cnt = 0
-for i in range(0, amount_of_standards, amount_of_hopping):
-    for offset in range(min(amount_of_hopping, amount_of_standards - web_cnt * amount_of_hopping)):
-        row_of_standard = driver.find_element(By.ID, f'dnn_ctr593_SpecificationsList_rgSpecificationList_ctl00__{offset}')
-        extracted_link = row_of_standard.find_element(By.ID, 'imgViewSpecifications').get_attribute('onclick')
-        sub_link = extracted_link.split("'")[1]
-        download_link = 'https://portal.3gpp.org' + sub_link
+    print(f"Extraction process will be started... ------------------- target series: [{target_series_title}]")
 
-        driver.get(download_link)
-        driver.find_element(By.CSS_SELECTOR, ".rtsLink.rtsAfter").click()
+    # target_series_title이 이미 존재하는지부터 확인.
+    target_series_title = target_series_title.replace(" ", "_")
+    if os.path.isdir(target_series_title):
+        print("The selected standard is already processed.")
+    else:
+        os.mkdir(target_series_title)
 
-        try:
-            elem = driver.find_element(By.ID, "SpecificationReleaseControl1_rpbReleases_i0_ctl00_specificationsVersionGrid_ctl00_ctl04_lnkFtpDownload")
-            download_link = elem.get_attribute('href')
+        # 해당 표준 사이트로 이동.
+        labels[idx].click()
+        btn_search = driver.find_element(By.ID, "dnn_ctr593_SpecificationsList_rpbSpecSearch_i0_btnSearch")
+        btn_search.click()
 
-            print(f"\tTry to download from {download_link}...")
+        _ = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, f'dnn_ctr593_SpecificationsList_rgSpecificationList_ctl00__0'))
+        )
 
-            file_name = download_link.split("/")[-1]
+        # 나와 있는 series 행 별로 다운로드 진행
+        amount_of_standards = int(driver.find_element(By.CSS_SELECTOR, ".rgWrap.rgInfoPart").text.split()[0])
+        amount_of_hopping = int(driver.find_element(By.CSS_SELECTOR, ".rgWrap.rgInfoPart").text.split()[-1])
 
-            try:
-                response = requests.get(
-                    url=download_link,
-                    stream=True
-                    )
+        print("Downloading documents...")
+        print(f"   The amount of standards to download: {amount_of_standards} with hopping {amount_of_hopping}.")
+        web_cnt = 0
+        for i in range(0, amount_of_standards, amount_of_hopping):
+            for offset in range(min(amount_of_hopping, amount_of_standards - web_cnt * amount_of_hopping)):
+                row_of_standard = driver.find_element(By.ID, f'dnn_ctr593_SpecificationsList_rgSpecificationList_ctl00__{offset}')
+                extracted_link = row_of_standard.find_element(By.ID, 'imgViewSpecifications').get_attribute('onclick')
+                sub_link = extracted_link.split("'")[1]
+                download_link = 'https://portal.3gpp.org' + sub_link
 
-                with open(file_name, 'wb') as file:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        file.write(chunk)
+                driver.get(download_link)
+                driver.find_element(By.CSS_SELECTOR, ".rtsLink.rtsAfter").click()
 
-                print(f"\t\tFile was downloaded successfully")
-            except requests.exceptions.RequestException as e:
-                print(f"\t\t!!! Fail to download: {e} !!!")
-        except:
-            print(f"\t\t!!! There is no available standard. Try next standard... !!!")
+                try:
+                    elem = driver.find_element(By.ID, "SpecificationReleaseControl1_rpbReleases_i0_ctl00_specificationsVersionGrid_ctl00_ctl04_lnkFtpDownload")
+                    download_link = elem.get_attribute('href')
 
-        driver.back()
+                    print(f"\tTry to download from {download_link}...")
 
-    web_cnt += 1
-    driver.find_element(By.CLASS_NAME, "rgPageNext").click()
+                    file_name = download_link.split("/")[-1]
 
-    print(f"\tNow...............[{web_cnt * amount_of_hopping}/{amount_of_standards}]")
+                    try:
+                        response = requests.get(
+                            url=download_link,
+                            stream=True
+                            )
 
-print("")
+                        with open(target_series_title + "/" + file_name, 'wb') as file:
+                            for chunk in response.iter_content(chunk_size=8192):
+                                file.write(chunk)
+
+                        print(f"\t\tFile was downloaded successfully")
+                    except requests.exceptions.RequestException as e:
+                        print(f"\t\t!!! Fail to download: {e} !!!")
+                except:
+                    print(f"\t\t!!! There is no available standard. Try next standard... !!!")
+
+                driver.back()
+
+            web_cnt += 1
+            driver.find_element(By.CLASS_NAME, "rgPageNext").click()
+
+            print(f"\tNow...............[{web_cnt * amount_of_hopping}/{amount_of_standards}]")
+
+        print("")
