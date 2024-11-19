@@ -26,9 +26,9 @@ def file_download_with_thread(download_link, path, file_name):
             for chunk in response.iter_content(chunk_size=8192):
                 file.write(chunk)
 
-        print(f"[✔] Successfully downloaded: {file_name}")
+        print(f"\t\t|---[✔] Successfully downloaded: {file_name}")
     except requests.exceptions.RequestException as e:
-        print(f"[✘] Failed to download {file_name}: {e}")
+        print(f"\t\t|---[✘] Failed to download {file_name}: {e}")
 
 
 target_series = int(input("Enter the series number to analysis: "))
@@ -101,7 +101,7 @@ else:
                     elem = driver.find_element(By.ID, "SpecificationReleaseControl1_rpbReleases_i0_ctl00_specificationsVersionGrid_ctl00_ctl04_lnkFtpDownload")
                     download_link = elem.get_attribute('href')
 
-                    print(f"[→] Preparing to download from {download_link}...")
+                    print(f"\t\t[→] Preparing to download from {download_link}...")
 
                     file_name = download_link.split("/")[-1]
 
@@ -110,7 +110,7 @@ else:
                     threads.append(thread)
                     thread.start()
                 except:
-                    print(f"\t[!] No available standard found, skipping...")
+                    print(f"\t\t|---[!] No available standard found, skipping...")
 
                 driver.close()
                 driver.switch_to.window(driver.window_handles[0])
