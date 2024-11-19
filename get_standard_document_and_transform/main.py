@@ -13,11 +13,25 @@ from selenium.webdriver.support import expected_conditions as EC
 
 import requests
 import os
+import threading
 
 from convert_docs_to_pdf import Unzip
 
-print("Enter the series number to analysis: ", end="")
-target_series = int(input())
+
+def file_download_with_thread(download_link, path, file_name):
+    try:
+        response = requests.get(url=download_link, stream=True)
+
+        with open(path + "/" + file_name, 'wb') as file:
+            for chunk in response.iter_content(chunk_size=8192):
+                file.write(chunk)
+
+        print(f"[✔] Successfully downloaded: {file_name}")
+    except requests.exceptions.RequestException as e:
+        print(f"[✘] Failed to download {file_name}: {e}")
+
+
+target_series = int(input("Enter the series number to analysis: "))
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
@@ -35,6 +49,9 @@ for idx, label in enumerate(labels):
     WebDriverWait(driver, 10).until(lambda driver: label.text.strip() != "")
     series_num = int(labels[idx].text.split('.')[0])
     series_dict[series_num] = (idx, label.text)
+
+# 쓰레드 기반 다운로드
+threads = []
 
 # 여기 수정해야 함 -> 원하는 시리즈로 갈 수 있게.
 if series_dict.get(target_series, None) is None:
@@ -55,6 +72,7 @@ else:
         labels[idx].click()
         btn_search = driver.find_element(By.ID, "dnn_ctr593_SpecificationsList_rpbSpecSearch_i0_btnSearch")
         btn_search.click()
+        original_window = driver.current_window_handle
 
         _ = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, f'dnn_ctr593_SpecificationsList_rgSpecificationList_ctl00__0'))
@@ -74,38 +92,38 @@ else:
                 sub_link = extracted_link.split("'")[1]
                 download_link = 'https://portal.3gpp.org' + sub_link
 
-                driver.get(download_link)
+                # 새 창에서 작업
+                driver.execute_script(f"window.open('{download_link}')")
+                driver.switch_to.window(driver.window_handles[-1])
                 driver.find_element(By.CSS_SELECTOR, ".rtsLink.rtsAfter").click()
 
                 try:
                     elem = driver.find_element(By.ID, "SpecificationReleaseControl1_rpbReleases_i0_ctl00_specificationsVersionGrid_ctl00_ctl04_lnkFtpDownload")
                     download_link = elem.get_attribute('href')
 
-                    print(f"\tTry to download from {download_link}...")
+                    print(f"[→] Preparing to download from {download_link}...")
 
                     file_name = download_link.split("/")[-1]
 
-                    try:
-                        response = requests.get(
-                            url=download_link,
-                            stream=True
-                            )
-
-                        with open(target_series_title + "/" + file_name, 'wb') as file:
-                            for chunk in response.iter_content(chunk_size=8192):
-                                file.write(chunk)
-
-                        print(f"\t\tFile was downloaded successfully")
-                    except requests.exceptions.RequestException as e:
-                        print(f"\t\t!!! Fail to download: {e} !!!")
+                    thread = threading.Thread(target=file_download_with_thread,
+                                              args=(download_link, target_series_title, file_name))
+                    threads.append(thread)
+                    thread.start()
                 except:
-                    print(f"\t\t!!! There is no available standard. Try next standard... !!!")
+                    print(f"\t[!] No available standard found, skipping...")
 
-                driver.back()
+                driver.close()
+                driver.switch_to.window(driver.window_handles[0])
 
             web_cnt += 1
             driver.find_element(By.CLASS_NAME, "rgPageNext").click()
+            original_window = driver.current_window_handle
 
             print(f"\tNow...............[{web_cnt * amount_of_hopping}/{amount_of_standards}]")
 
         print("")
+
+for thread in threads:
+    thread.join()
+
+print("[✔] All downloads completed.")
