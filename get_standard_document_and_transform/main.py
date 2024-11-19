@@ -53,6 +53,9 @@ for idx, label in enumerate(labels):
 # 쓰레드 기반 다운로드
 threads = []
 
+# 압축 해제 요청
+unzip_class = Unzip()
+
 # 여기 수정해야 함 -> 원하는 시리즈로 갈 수 있게.
 if series_dict.get(target_series, None) is None:
     print(f"There is no series with number {target_series}")
@@ -63,6 +66,8 @@ else:
 
     # target_series_title이 이미 존재하는지부터 확인.
     target_series_title = target_series_title.replace(" ", "_")
+    target_series_title = target_series_title.replace(".", "_")
+    unzip_class.setter(target_series_title)
     if os.path.isdir(target_series_title):
         print("The selected standard is already processed.")
     else:
@@ -126,4 +131,6 @@ else:
 for thread in threads:
     thread.join()
 
-print("[✔] All downloads completed.")
+print("[✔] All downloads completed. Unzipping will be started...")
+
+unzip_class.unzip_file()

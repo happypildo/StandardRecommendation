@@ -1,30 +1,66 @@
 import glob
 import zipfile
 import os
+import threading
 
 
 class Unzip:
-    def __init__(self, target_directory):
+    def __init__(self, target_directory=""):
         self.target_directory = target_directory
+        self.unzip_directory = "unzip_" + target_directory
+
+        self.threads = []
+
+    def setter(self, target_dir):
+        self.target_directory = target_dir
+        self.unzip_directory = "unzip_" + target_dir
 
     def unzip_file(self):
-        zip_files = glob.glob(f"{self.target_directory}/*.zip")
+        def unzipping(f):
+            try:
+                with zipfile.ZipFile(f, 'r') as zip_ref:
+                    zip_ref.extractall(self.unzip_directory)
+            except:
+                pass
 
-        print(zip_files)
+        self.threads = []
+
+        if os.path.isdir(self.unzip_directory):
+            print(f"Directory [{self.unzip_directory}] already exists.")
+        else:
+            os.mkdir(self.unzip_directory)
+            zip_files = glob.glob(f"{self.target_directory}/*.zip")
+
+            for file in zip_files:
+                try:
+                    thread = threading.Thread(target=unzipping,
+                                              args=(file, ))
+                    self.threads.append(thread)
+                    thread.start()
+                except zipfile.BadZipfile as e:
+                    pass
+
+            print("\n------------------------------------------")
+            print(f"[~] Waiting for thread joining...")
+            for thread in self.threads:
+                thread.join()
+            print(f"[✔] Successfully unzip all files")
+
+            self.refine_files()
+
+    def refine_files(self):
+        print(f"[~] Trying to delete files w/o doc ex...")
+
+        for filename in os.listdir(self.unzip_directory):
+            file_path = os.path.join(self.unzip_directory, filename)
+
+            if os.path.isfile(file_path):
+                if not filename.endswith('.doc'):
+                    os.remove(file_path)
+                else:
+                    pass
+
+        print(f"[✔] Successfully refine all files")
+        print("------------------------------------------")
 
 
-# zip_files =
-#
-# zip_file_path = "path_to_your_zip_file.zip"
-# extract_to_path = "path_to_extract"
-#
-# # 디렉토리가 없는 경우 생성
-# os.makedirs(extract_to_path, exist_ok=True)
-#
-# # ZIP 파일 열기 및 압축 해제
-# try:
-#     with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-#         zip_ref.extractall(extract_to_path)
-#         print(f"ZIP 파일이 '{extract_to_path}'에 성공적으로 풀렸습니다!")
-# except zipfile.BadZipFile:
-#     print("ZIP 파일이 손상되었거나 유효하지 않습니다.")
