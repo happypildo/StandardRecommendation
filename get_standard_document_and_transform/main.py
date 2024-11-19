@@ -31,9 +31,13 @@ def file_download_with_thread(download_link, path, file_name):
         print(f"\t\t|---[✘] Failed to download {file_name}: {e}")
 
 
+options = Options()
+options.add_argument('headless')
+
 target_series = int(input("Enter the series number to analysis: "))
 
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),
+                          options=options)
 
 # 표준 사이트 입장
 driver.get("https://portal.3gpp.org/Specifications.aspx?q=1&series=0&releases=all&draft=False&underCC=False&withACC=False&withBCC=False&numberNYA=False")

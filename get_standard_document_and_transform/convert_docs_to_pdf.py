@@ -81,7 +81,10 @@ class Unzip:
 
                 if os.path.isfile(file_path):
                     if filename.endswith('.doc'):
-                        out_file_path = os.path.abspath("./" + pdf_dir + "/" + filename[:-4])
+                        pdf_file_name = filename[:-4].replace(" ", "_")
+                        pdf_file_name = pdf_file_name.replace(".", "_")
+
+                        out_file_path = os.path.abspath("./" + pdf_dir + "/" + pdf_file_name)
 
                         word = comtypes.client.CreateObject('Word.Application')
                         time.sleep(3)
