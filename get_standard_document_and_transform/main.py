@@ -33,7 +33,7 @@ def file_download_with_thread(download_link, path, file_name):
 
 
 options = Options()
-# options.add_argument('headless')
+options.add_argument('headless')
 
 target_series = int(input("Enter the series number to analysis: "))
 

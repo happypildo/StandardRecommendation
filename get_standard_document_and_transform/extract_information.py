@@ -43,6 +43,11 @@ class Extractor:
                 print(standard_title)
                 print(study_area)
                 print(release)
+
+                # Extract Indicies...
+                pattern = r"(?<=\n)[\w\s]+(?=\.{5,})"
+                matches = re.findall(pattern, pdf.load_page(2).get_text())
+
                 print()
 
             except:
