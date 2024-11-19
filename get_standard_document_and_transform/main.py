@@ -16,6 +16,7 @@ import os
 import threading
 
 from convert_docs_to_pdf import Unzip
+from extract_information import Extractor
 
 
 def file_download_with_thread(download_link, path, file_name):
@@ -32,7 +33,7 @@ def file_download_with_thread(download_link, path, file_name):
 
 
 options = Options()
-options.add_argument('headless')
+# options.add_argument('headless')
 
 target_series = int(input("Enter the series number to analysis: "))
 
@@ -60,7 +61,7 @@ threads = []
 # 압축 해제 요청
 unzip_class = Unzip()
 
-# 여기 수정해야 함 -> 원하는 시리즈로 갈 수 있게.
+# 여기 수정해야 함 -> 원하는 시리즈로 갈 수 있게. -> Dropdown 요소 가져와서 click으로 처리함
 if series_dict.get(target_series, None) is None:
     print(f"There is no series with number {target_series}")
 else:
@@ -78,7 +79,12 @@ else:
         os.mkdir(target_series_title)
 
         # 해당 표준 사이트로 이동.
+        # + TR 문서만 가져올 수 있도록 추가 수정
         labels[idx].click()
+        drop_down_a.click()
+        TR_btn = driver.find_element(By.ID, "dnn_ctr593_SpecificationsList_rpbSpecSearch_i0_cbTechnicalReport")
+        TR_btn.click()
+
         btn_search = driver.find_element(By.ID, "dnn_ctr593_SpecificationsList_rpbSpecSearch_i0_btnSearch")
         btn_search.click()
         original_window = driver.current_window_handle
@@ -138,3 +144,7 @@ for thread in threads:
 print("[✔] All downloads completed. Unzipping will be started...")
 
 unzip_class.unzip_file()
+pdf_file_dir = "pdf_" + unzip_class.target_directory
+
+pdf_extractor = Extractor(target_path=pdf_file_dir)
+pdf_extractor.extract_content_from_pdf()
