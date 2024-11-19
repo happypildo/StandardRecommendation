@@ -2,6 +2,9 @@ import glob
 import zipfile
 import os
 import threading
+import sys
+import comtypes.client
+import time
 
 
 class Unzip:
@@ -61,6 +64,43 @@ class Unzip:
                     pass
 
         print(f"[✔] Successfully refine all files")
+        self.convert_to_pdf()
+
+    def convert_to_pdf(self):
+        print(f"[~] Trying to convert doc file to pdf file...")
+
+        pdf_dir = "pdf_" + self.target_directory
+
+        if os.path.isdir(pdf_dir):
+            print(f"Directory [{pdf_dir}] already exists.")
+        else:
+            os.mkdir(pdf_dir)
+
+            for filename in os.listdir(self.unzip_directory):
+                file_path = os.path.abspath("./" + self.unzip_directory + "/" + filename)
+
+                if os.path.isfile(file_path):
+                    if filename.endswith('.doc'):
+                        out_file_path = os.path.abspath("./" + pdf_dir + "/" + filename[:-4])
+
+                        word = comtypes.client.CreateObject('Word.Application')
+                        time.sleep(3)
+                        try:
+                            doc = word.Documents.Open(file_path)
+                        except:
+                            pass
+                        else:
+                            time.sleep(3)
+
+                            try:
+                                doc.SaveAs(out_file_path, FileFormat=17)
+                            except:
+                                doc.Close()
+                            else:
+                                time.sleep(3)
+
+                                doc.Close()
+                                word.Quit()
+
+        print(f"[✔] Successfully convert all files")
         print("------------------------------------------")
-
-
