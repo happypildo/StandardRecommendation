@@ -13,11 +13,11 @@ from selenium.webdriver.support import expected_conditions as EC
 
 import requests
 import os
+import threading
 
 from convert_docs_to_pdf import Unzip
 
-print("Enter the series number to analysis: ", end="")
-target_series = int(input())
+target_series = int(input("Enter the series number to analysis: "))
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
@@ -35,6 +35,9 @@ for idx, label in enumerate(labels):
     WebDriverWait(driver, 10).until(lambda driver: label.text.strip() != "")
     series_num = int(labels[idx].text.split('.')[0])
     series_dict[series_num] = (idx, label.text)
+
+# 쓰레드 기반 다운로드
+threads = []
 
 # 여기 수정해야 함 -> 원하는 시리즈로 갈 수 있게.
 if series_dict.get(target_series, None) is None:
@@ -55,6 +58,7 @@ else:
         labels[idx].click()
         btn_search = driver.find_element(By.ID, "dnn_ctr593_SpecificationsList_rpbSpecSearch_i0_btnSearch")
         btn_search.click()
+        original_window = driver.current_window_handle
 
         _ = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, f'dnn_ctr593_SpecificationsList_rgSpecificationList_ctl00__0'))
@@ -74,8 +78,13 @@ else:
                 sub_link = extracted_link.split("'")[1]
                 download_link = 'https://portal.3gpp.org' + sub_link
 
-                driver.get(download_link)
+                # 새 창에서 작업
+                driver.execute_script(f"window.open('{download_link}')")
+                driver.switch_to.window(driver.window_handles[-1])
                 driver.find_element(By.CSS_SELECTOR, ".rtsLink.rtsAfter").click()
+
+                # driver.get(download_link)
+                # driver.find_element(By.CSS_SELECTOR, ".rtsLink.rtsAfter").click()
 
                 try:
                     elem = driver.find_element(By.ID, "SpecificationReleaseControl1_rpbReleases_i0_ctl00_specificationsVersionGrid_ctl00_ctl04_lnkFtpDownload")
@@ -101,10 +110,13 @@ else:
                 except:
                     print(f"\t\t!!! There is no available standard. Try next standard... !!!")
 
-                driver.back()
+                # driver.back()
+                driver.close()
+                driver.switch_to.window(driver.window_handles[0])
 
             web_cnt += 1
             driver.find_element(By.CLASS_NAME, "rgPageNext").click()
+            original_window = driver.current_window_handle
 
             print(f"\tNow...............[{web_cnt * amount_of_hopping}/{amount_of_standards}]")
 
