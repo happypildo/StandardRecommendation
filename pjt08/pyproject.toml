@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "pjt08"
+version = "0.1.0"
+description = ""
+authors = ["abcd"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pyspark = "^3.5.3"
+hdfs = "^2.7.3"
+streamlit = "^1.40.1"
+matplotlib = "^3.9.2"
+plotly = "^5.24.1"
+wordcloud = "^1.9.4"
+nltk = "^3.9.1"
+langchain-openai = "^0.2.9"
+pgvector = "^0.3.6"
+psycopg2-binary = "^2.9.10"
+python-dotenv = "^1.0.1"
+langchain = "^0.3.7"
+langchain-community = "^0.3.7"
+frontend = "^0.0.3"
+pymupdf = "^1.24.14"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
