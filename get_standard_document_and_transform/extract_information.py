@@ -40,14 +40,43 @@ class Extractor:
                 release = release.strip()[:-1]
 
                 print("-"*10)
-                print(standard_title)
-                print(study_area)
-                print(release)
+                print("Title: ", standard_title)
+                print("Area: ", study_area)
+                print("Release: ", release)
 
-                # Extract Indicies...
-                pattern = r"(?<=\n)[\w\s]+(?=\.{5,})"
-                matches = re.findall(pattern, pdf.load_page(2).get_text())
+                # 목차 정보 추추
+                all_indices = []
+                page_num = 2
+                while True:
+                    pattern = r"(?<=\n)[\w\s]+(?=\.{5,})"
+                    matches = re.findall(pattern, pdf.load_page(page_num).get_text())
 
+                    if len(matches) == 0:
+                        break
+
+                    all_indices.extend(matches)
+                    page_num += 1
+
+                start_idx = 0
+                for match in all_indices:
+                    if 'Abbreviations' in match:
+                        break
+                    start_idx += 1
+                all_indices = all_indices[start_idx+1:]
+
+                processed_indices = []
+                for idx, match in enumerate(all_indices):
+                    spl_match = match.split("\n")
+                    for spl in spl_match:
+                        temp = spl.strip()
+                        if temp.isdigit():
+                            pass
+                        else:
+                            processed_indices.append(temp)
+
+                print("Indices: ", ", ".join(processed_indices))
+
+                # Scope 정보 가져오기
                 print()
 
             except:
