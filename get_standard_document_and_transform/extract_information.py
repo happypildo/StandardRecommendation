@@ -77,6 +77,17 @@ class Extractor:
                 print("Indices: ", ", ".join(processed_indices))
 
                 # Scope 정보 가져오기
+                while True:
+                    if "\nScope \n" in pdf.load_page(page_num).get_text():
+                        break
+                    page_num += 1
+                scope_page_text = pdf.load_page(page_num).get_text()
+                s = scope_page_text.index("\nScope \n")
+                e = scope_page_text.index("\nReferences \n")
+                scope_page_text = scope_page_text[s:e]
+                scope_page_text = scope_page_text.replace("\n", " ").strip()
+                print("Scope: ", scope_page_text)
+
                 print()
 
             except:
