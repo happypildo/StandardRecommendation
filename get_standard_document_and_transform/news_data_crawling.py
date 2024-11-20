@@ -13,25 +13,18 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 
 import requests
-import os
-import threading
-import time
-
-from convert_docs_to_pdf import Unzip
-from extract_information import Extractor
 
 
-def file_download_with_thread(download_link, path, file_name):
-    try:
-        response = requests.get(url=download_link, stream=True)
+def extract_text_recursively(c, element):
+    # 현재 요소의 텍스트 추출
+    text = element.text.strip()
+    if text:
+        c.append(text)
 
-        with open(path + "/" + file_name, 'wb') as file:
-            for chunk in response.iter_content(chunk_size=8192):
-                file.write(chunk)
-
-        print(f"\t\t|---[✔] Successfully downloaded: {file_name}")
-    except requests.exceptions.RequestException as e:
-        print(f"\t\t|---[✘] Failed to download {file_name}: {e}")
+    # 자식 요소들을 재귀적으로 탐색
+    child_elements = element.find_elements(By.XPATH, './*')
+    for child in child_elements:
+        extract_text_recursively(c, child)
 
 
 options = Options()
@@ -52,53 +45,45 @@ try:
 except:
     print("There is no cookie component. Keep going...")
 
-# len_elem = driver.find_element(By.XPATH, '//*[@id="sp-component"]/div/div[6]/div[2]/p')
-# len_elem = WebDriverWait(driver, 10).until(
-#             EC.presence_of_element_located((By.XPATH, '//*[@id="sp-component"]/div/div[6]/div[2]/p'))
-#         )
 WebDriverWait(driver, 10).until(lambda driver: driver.find_element(By.XPATH, '//*[@id="sp-component"]/div/div[6]/div[2]/p').text.strip() != "")
 len_elem = driver.find_element(By.XPATH, '//*[@id="sp-component"]/div/div[6]/div[2]/p')
 maximum_length = int(len_elem.text.split(' ')[-1])
 page_cnt = 0
 while True:
     news_components = driver.find_elements(By.CLASS_NAME, "com-content-custom-blog__item")
-
+    print(len(news_components))
     for news_component in news_components:
-        try:
-            a_elem = news_component.find_element(By.CSS_SELECTOR, "div > div > a")
-            link = a_elem.get_attribute("href")
+        # try:
+        a_elem = news_component.find_element(By.CSS_SELECTOR, "div > div > a")
+        link = a_elem.get_attribute("href")
 
-            driver.execute_script(f"window.open('{link}')")
-            driver.switch_to.window(driver.window_handles[-1])
+        driver.execute_script(f"window.open('{link}')")
+        driver.switch_to.window(driver.window_handles[-1])
 
-            # 제목 가져오기
-            title_elem = driver.find_element(By.CSS_SELECTOR, ".customHeader > h2")
-            title = title_elem.text
+        # 제목 가져오기
+        title_elem = driver.find_element(By.CSS_SELECTOR, ".customHeader > h2")
+        title = title_elem.text
 
-            # 날짜 가져오기
-            date_elem = driver.find_element(By.CSS_SELECTOR, ".customHeader .header_date")
-            date = date_elem.text
+        # 날짜 가져오기
+        date_elem = driver.find_element(By.CSS_SELECTOR, ".customHeader .header_date")
+        date = date_elem.text
 
-            # 본문 내용 가져오기
-            content_elem = driver.find_element(By.CSS_SELECTOR, "div.sppb-addon.sppb-addon-text-block")
-            p_tags = content_elem.find_elements(By.TAG_NAME, "p")
-            contents = []
-            for p in p_tags:
-                WebDriverWait(p, 10).until(lambda p: p.text.strip() != "")
-                contents.append(p.text)
-            contents = " ".join(contents)
+        print("-" * 10)
+        print(f"Title: {title}")
+        print(f"Date: {date}")
+        # print(f"Contents: {contents}")
 
-            print("-" * 10)
-            print(f"Title: {title}")
-            print(f"Date: {date}")
-            print(f"Contents: {contents}")
-            print()
+        print("Modified vvvvvvvvvvvvv")
+        body = driver.find_element(By.XPATH, '//*[@id="sppb-addon-wrapper-1649676445472"]')
+        contents = []
+        extract_text_recursively(contents, body)
 
-            driver.close()
-            driver.switch_to.window(driver.window_handles[0])
-        except:
-            pass
+        print(" ".join(contents))
 
+        print()
+
+        driver.close()
+        driver.switch_to.window(driver.window_handles[0])
 
     if page_cnt >= maximum_length - 1:
         break
