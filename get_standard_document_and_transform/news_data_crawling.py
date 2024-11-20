@@ -12,7 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 
-import requests
+import time
 
 
 def extract_text_recursively(c, element):
@@ -28,10 +28,15 @@ def extract_text_recursively(c, element):
 
 
 options = Options()
+options.add_argument('--disable-extensions')
+options.add_argument('--disable-gpu')
+options.add_argument('--no-sandbox')
+options.add_argument('--disable-dev-shm-usage')
 # options.add_argument('headless')
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),
                           options=options)
+driver.set_page_load_timeout(60)
 
 # 뉴스 사이트 입장
 driver.get("https://www.3gpp.org/news-events/3gpp-news")
@@ -53,35 +58,49 @@ while True:
     news_components = driver.find_elements(By.CLASS_NAME, "com-content-custom-blog__item")
     print(len(news_components))
     for news_component in news_components:
-        # try:
-        a_elem = news_component.find_element(By.CSS_SELECTOR, "div > div > a")
-        link = a_elem.get_attribute("href")
+        try:
+            a_elem = news_component.find_element(By.CSS_SELECTOR, "div > div > a")
+            link = a_elem.get_attribute("href")
 
-        driver.execute_script(f"window.open('{link}')")
-        driver.switch_to.window(driver.window_handles[-1])
+            driver.execute_script(f"window.open('{link}')")
+            driver.switch_to.window(driver.window_handles[-1])
 
-        # 제목 가져오기
-        title_elem = driver.find_element(By.CSS_SELECTOR, ".customHeader > h2")
-        title = title_elem.text
+            # 스크롤할 대상 찾기 (페이지 전체나 특정 div)
+            scrollable_element = driver.find_element(By.TAG_NAME, "body")  # 페이지 전체 스크롤
 
-        # 날짜 가져오기
-        date_elem = driver.find_element(By.CSS_SELECTOR, ".customHeader .header_date")
-        date = date_elem.text
+            # ActionChains로 스크롤 시뮬레이션
+            for _ in range(10):  # 10번 스크롤
+                ActionChains(driver).scroll_by_amount(0, 300).perform()  # 300픽셀씩 스크롤
+                time.sleep(0.5)  # 스크롤 후 로딩 대기
 
-        print("-" * 10)
-        print(f"Title: {title}")
-        print(f"Date: {date}")
-        # print(f"Contents: {contents}")
+            # 제목 가져오기
+            title_elem = driver.find_element(By.CSS_SELECTOR, ".customHeader > h2")
+            title = title_elem.text
 
-        print("Modified vvvvvvvvvvvvv")
-        body = driver.find_element(By.XPATH, '//*[@id="sppb-addon-wrapper-1649676445472"]')
-        contents = []
-        extract_text_recursively(contents, body)
+            # 날짜 가져오기
+            date_elem = driver.find_element(By.CSS_SELECTOR, ".customHeader .header_date")
+            date = date_elem.text
 
-        print(" ".join(contents))
+            contents = []
+            parent = driver.find_element(By.XPATH, '//*[@id="column-id-1649676445471"]/div')
 
-        print()
+            children = parent.find_elements(By.XPATH, './*')
+            if len(children):
+                continue
+            for child in children:
+                contents.append(child.text)
 
+            print("-" * 10)
+            print(f"Title: {title}")
+            print(f"Date: {date}")
+            # print(f"Contents: {contents}")
+
+            print("Modified vvvvvvvvvvvvv")
+            print(" ".join(contents))
+
+            print()
+        except:
+            pass
         driver.close()
         driver.switch_to.window(driver.window_handles[0])
 
