@@ -14,3 +14,8 @@ class NewsSerializer(serializers.ModelSerializer):
     class Meta:
         model = News
         fields = '__all__'
+
+class NewsKeywords(models.Model):
+    keyword = models.CharField(max_length=50)
+
+    news = models.ForeignKey(News, on_delete=models.CASCADE, related_name='news_set')

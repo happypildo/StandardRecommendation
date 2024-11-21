@@ -5,9 +5,10 @@ from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 
-from .models import News, NewsSerializer
+from .models import News, NewsSerializer, NewsKeywords
 
 from .crawling.news_data_crawling import Crawler
+from .crawling.extract_keywords import Extractor
 from .crawling.summarize_gpt import Summarizer
 
 
@@ -26,25 +27,22 @@ def news_list(request):
 @api_view(['GET'])
 def news_list_update(request):
     crawler = Crawler()
+    extractor = Extractor()
 
     for news in crawler.crawl_data():
         print("In the view.py -------------------------------------")
         print(news)
         if not News.objects.filter(title=news['title']).exists():
-            instance = News.objects.create(
+            news = News.objects.create(
                 title=news['title'],
                 content=news['contents']
             )
-            print("Instance is well saved?: ", instance)
+            
+            keywords = extractor.use_chat_gpt_for_extraction(content=news['contents'])
+            for keyword in keywords.split(','):
+                NewsKeywords.objects.create(news=news, keyword=keyword)
         else:
             break
-
-        # message = summarizer.use_chat_gpt_for_summarization(
-        #     title=news['title'],
-        #     content=news['contents']
-        # )
-        # print("Summarization: ")
-        # print(message)
         
     return Response({'message': "Good ^_^"})
 
