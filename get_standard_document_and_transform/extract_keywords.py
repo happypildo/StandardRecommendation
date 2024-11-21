@@ -7,7 +7,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
-class Summarizer:
+class Extractor:
     def __init__(self, model='gpt-4o-mini'):
         self.model = model
 
@@ -49,7 +49,7 @@ class Summarizer:
         return chat_response.choices[0].message.content
 
 
-summa = Summarizer()
+summa = Extractor()
 message = summa.use_chat_gpt_for_summarization(
     title="5G Non-Terrestrial Networks",
     content="""Just as the work in 3GPP is starting on Rel-19 Non-Terrestrial Networks (NTN), five leading contributors have released a new book on 5G NTN and beyond. Alessandro Vanelli-Coralli, Nicolas Chuberre, Gino Masini, Alessandro Guidotti, Mohamed El Jaafari are the authors of "5G Non-Terrestrial Networks: Technologies, Standards, and System Design" (Wiley-IEEE Press).
