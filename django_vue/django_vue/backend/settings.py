@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     # my app
     'accounts',
     'boards',
+    'news',
     
     # DRF
     'rest_framework',
