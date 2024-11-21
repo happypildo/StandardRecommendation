@@ -23,4 +23,6 @@ urlpatterns = [
     path('api/v1/', include('boards.urls')),
     path('dj-rest-auth/', include('dj_rest_auth.urls')),
     path('dj-rest-auth/registration/', include('dj_rest_auth.registration.urls')),
+
+    path('crawl/', include('news.urls')),
 ]
