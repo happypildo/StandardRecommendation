@@ -14,7 +14,7 @@ export const useNewsStore = defineStore('news', () => {
     console.log("GOGOGOGOOGGOO")
     axios({
       method: 'get',
-      url: `${API_URL}/crawl/`,
+      url: `${API_URL}/crawl/renew/`,
       headers: {
         Authorization: `Token ${userStore.token}`
       }
@@ -23,5 +23,38 @@ export const useNewsStore = defineStore('news', () => {
     })
   }
 
-  return { news, crawlNews }
+  const listUpNews = function() {
+    console.log("listUp btn is clicked...")
+    axios({
+        method: 'get',
+        url: `${API_URL}/crawl/list/`,
+        headers: {
+          Authorization: `Token ${userStore.token}`
+        }
+      }).then((response) => {
+        console.log("Successfully listed up")
+        console.log(response.data)
+        news.value = response.data
+      })
+  }
+
+  const getSummarization = function(id) {
+    console.log("Summarization is clicked...")
+    console.log(id)
+    axios({
+        method: 'get',
+        url: `${API_URL}/crawl/summarize/`,
+        headers: {
+            Authorization: `Token ${userStore.token}`
+        },
+        params: {
+            id: id
+        }
+    }).then((response) => {
+        console.log("Successfully summarized")
+        console.log(response.data)
+    })
+  }
+
+  return { news, crawlNews, listUpNews, getSummarization }
 })
