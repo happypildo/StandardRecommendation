@@ -6,6 +6,7 @@ import HomeView from '../views/HomeView.vue'
 import LoginView from '@/views/LoginView.vue'
 import SignupView from '@/views/SignupView.vue'
 import BoardCreateView from '@/views/BoardCreateView.vue'
+import NewsView from '@/views/NewsViewer.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -29,6 +30,11 @@ const router = createRouter({
       path: '/create-board',
       name: 'createBorad',
       component: BoardCreateView,
+    },
+    {
+      path: '/news',
+      name: 'news',
+      component: NewsView,
     },
   ],
 })

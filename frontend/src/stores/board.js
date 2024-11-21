@@ -41,9 +41,7 @@ export const useBoardStore = defineStore('board', () => {
     }).catch((error) => {
       console.log(error)
     })
-
   }
-
 
   return { boards, getBoards, createBoard }
 })
