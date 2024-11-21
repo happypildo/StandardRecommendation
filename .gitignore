@@ -4,6 +4,7 @@
 *.pdf
 __pycache__
 .deb
+.env
 
 # Logs
 logs
