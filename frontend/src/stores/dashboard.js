@@ -12,6 +12,7 @@ export const useDashBoardStore = defineStore('dashboard', () => {
     const dashboards = ref([])
 
     const wordClouds = ref([])
+    const plotImg = ref([])
 
     const getWordCloudInfo = function() {
         console.log("Trying to get word-cloud information...")
@@ -45,5 +46,21 @@ export const useDashBoardStore = defineStore('dashboard', () => {
             console.log(wordClouds.value)
         })
     }
-    return { dashboards, wordClouds, getWordCloudInfo}
+    const getPlotImg = function(release_num) {
+        console.log(`Trying to get plot-image by ${release_num}`)
+        axios({
+            method: 'get',
+            url: `${API_URL}/crawl/release_relation/${release_num}/`,
+            headers: {
+                Authorization: `Token ${userStore.token}`
+            }
+        }).then((response) => {
+            console.log(response.data)
+            console.log(response.data.image)
+            // plotImg.value = response.data.image
+            plotImg.value = `data:image/png;base64,${response.data.image}`;
+        })
+    }
+
+    return { dashboards, wordClouds, plotImg, getWordCloudInfo, getPlotImg}
 })
