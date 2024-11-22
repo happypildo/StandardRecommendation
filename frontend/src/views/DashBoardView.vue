@@ -1,9 +1,13 @@
 <script setup>
 import WordCloud from "@/views/WordCloud.vue";
-import { computed, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useDashBoardStore } from "@/stores/dashboard";
+import { useUserStore } from '@/stores/user'
+import axios from 'axios'
 
 const dashboardStore = useDashBoardStore();
+const userStore = useUserStore()
+const API_URL = 'http://127.0.0.1:8000'
 
 // wordCloud 데이터를 computed로 참조
 const wcInfo = computed(() => dashboardStore.wordClouds);
@@ -26,6 +30,44 @@ onMounted(() => {
     getPlotImg(18);
     console.log("getPlotIMAGE")
 });
+
+// 챗봇
+// 챗봇과 사용자의 모든 메시지를 관리하는 반응형 배열
+const messages = ref([
+  { sender: "bot", text: "안녕하세요! 저는 챗봇입니다. 무엇을 도와드릴까요?" },
+]); // 초기 챗봇 메시지
+const currentMessage = ref(""); // 입력창에 입력된 메시지
+
+// Django에서 챗봇 응답을 받아오는 함수
+const sendMessage = async () => {
+    if (!currentMessage.value.trim()) return; // 빈 입력 방지
+
+    // 사용자 메시지를 추가
+    messages.value.push({ sender: "user", text: currentMessage.value });
+    console.log(currentMessage.value)
+    axios({
+        method: 'get',
+        url: `${API_URL}/crawl/chatbot/`,
+        headers: {
+            Authorization: `Token ${userStore.token}`,
+            "Content-Type": "application/json",
+        },
+        data: {
+            message: currentMessage.value,
+        },
+    }).then((response) => {
+        console.log(response.data)
+
+        const botReponse = response.data
+
+        messages.value.push({sender:'bot', text: botReponse})
+    }).catch((error) => {
+        console.log(error)
+        messages.value.push({sender:'bot', text: "서버와 연결할 수 없습니다."})
+    })
+
+    currentMessage.value = ""; // 입력창 초기화
+};
 
 </script>
 
@@ -64,32 +106,32 @@ onMounted(() => {
             </section>
 
             <section class="chatbot-content">
-            <h2>Chatbot</h2>
-            <div class="chat-container">
+                <h2>Chatbot</h2>
+                <div class="chat-container">
                 <!-- 채팅 메시지 영역 -->
                 <div class="chat-messages">
-                <!-- 사용자 메시지 -->
-                <div class="chat-message user" v-if="userMessage">
-                    <p>{{ userMessage }}</p>
-                </div>
-
-                <!-- 챗봇 메시지 -->
-                <div class="chat-message bot" v-for="(message, index) in botMessages" :key="index">
-                    <p>{{ message }}</p>
-                </div>
+                    <!-- 메시지 목록 렌더링 -->
+                    <div
+                    class="chat-message"
+                    :class="message.sender"
+                    v-for="(message, index) in messages"
+                    :key="index"
+                    >
+                    <p>{{ message.text }}</p>
+                    </div>
                 </div>
 
                 <!-- 입력창 -->
                 <div class="chat-input">
-                <input
+                    <input
                     type="text"
                     v-model="currentMessage"
                     placeholder="챗봇에게 메시지 입력..."
                     @keyup.enter="sendMessage"
-                />
-                <button @click="sendMessage">보내기</button>
+                    />
+                    <button @click="sendMessage">보내기</button>
                 </div>
-            </div>
+                </div>
             </section>
 
         </main>
@@ -213,7 +255,7 @@ onMounted(() => {
 
 .chat-messages {
   flex: 1;
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
