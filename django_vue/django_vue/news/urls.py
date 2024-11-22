@@ -12,4 +12,5 @@ urlpatterns = [
 
     path('wcinfo/', views.interest_info, name="interest_info"),
     path('release_relation/<int:release_num>/', views.release_graph, name="release_graph"),
+    path('chatbot/', views.chat, name="chat"),
 ]
