@@ -10,6 +10,7 @@ from .models import News, NewsSerializer, Keywords, KeywordSerializer, UserActio
 from .crawling.news_data_crawling import Crawler
 from .crawling.extract_keywords import Extractor
 from .crawling.summarize_gpt import Summarizer
+from .crawling.link_to_standard_document import StringToWordConnection
 
 import re
 
@@ -99,6 +100,7 @@ def news_summarize(request, id):
 
 @api_view(['GET'])
 def interest_info(request):
+    # For word cloud
     print("------------------------")
     print(request.user)
     print("------------------------")
@@ -109,3 +111,30 @@ def interest_info(request):
     print(userKeywords_serialized.data)
 
     return Response(userKeywords_serialized.data)
+
+@api_view(['GET'])
+def release_graph(request, release_num):
+    userKeywords = UserAction.objects.filter(user_id=request.user.id)
+    userKeywords_serialized = UserActionSerializer(userKeywords, many=True)
+
+    keywords = []
+    weights = []
+
+    print("--------------------------------")
+    # print(userKeywords_serialized.data)
+    
+    for data_dict in userKeywords_serialized.data:
+        keywords.append(data_dict['keyword'])
+        weights.append(data_dict['intensity'])
+
+    stwc = StringToWordConnection(
+        release_num=release_num,
+        keywords=keywords,
+        weights=weights,
+        model_name="bert-base-uncased"
+    )    
+
+    img = stwc.process()
+    print(img)
+
+    return JsonResponse({'image': img})
