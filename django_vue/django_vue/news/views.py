@@ -13,6 +13,7 @@ from .crawling.summarize_gpt import Summarizer
 from .crawling.link_to_standard_document import StringToWordConnection
 
 import re
+import json
 
 @api_view(['GET'])
 def news_list(request):
@@ -138,3 +139,15 @@ def release_graph(request, release_num):
     print(img)
 
     return JsonResponse({'image': img})
+
+@api_view(['GET'])
+def chat(request):
+    print()
+    print("-------------------------------")
+    print(request)
+    data = json.loads(request.body)
+    user_message = data.get("message", "")
+
+    pritn(user_message)
+
+    return JsonResponse({'data': "Good"})
