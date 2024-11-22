@@ -9,4 +9,6 @@ urlpatterns = [
     path('list/', views.news_list, name='news_list'),
     path('renew/', views.news_list_update, name="news_list_update"),
     path('news_summarize/<int:id>/', views.news_summarize, name="news_summarize"),
+
+    path('wcinfo/', views.interest_info, name="interest_info"),
 ]
