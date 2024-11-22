@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useNewsStore } from '@/stores/news'
 import { useUserStore } from '@/stores/user'
 import axios from 'axios'
@@ -88,6 +88,11 @@ const summarize = (postId) => {
     // summaries.value[postId] = `This is a summarized version of post ID ${postId}.`;
 };
 
+// 화면 뜨면 새로 갱신
+onMounted(() => {
+    listUpNews();
+});
+
 </script>
 
 <template>
@@ -113,6 +118,9 @@ const summarize = (postId) => {
 
       <!-- 내용 -->
       <p class="content">내용: {{ post.content }}</p>
+
+      <!-- 키워드 출력 -->
+      <p class="keyword">키워드: {{ post.keywords }}</p>
 
       <!-- Summarize 버튼 -->
       <button 

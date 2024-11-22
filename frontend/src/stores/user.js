@@ -57,5 +57,22 @@ export const useUserStore = defineStore('user', () => {
     })
   }
 
-  return { token, loginUsername, logIn, signUp }
+  const logOut = function () {
+    axios({
+      method: 'post',
+      url: `${API_URL}/dj-rest-auth/logout/`,
+      headers: {
+        Authorization: `Token ${token}`
+      }
+    }).then((response) => {
+      console.log('로그 아웃 완료!')
+      alert('로그 아웃 완료!')
+      // token = ref(null)
+    })
+    .catch((error) => {
+      console.log(error)
+    })
+  }
+
+  return { token, loginUsername, logIn, signUp, logOut }
 }, { persist: true })
