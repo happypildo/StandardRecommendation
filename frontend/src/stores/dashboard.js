@@ -12,6 +12,7 @@ export const useDashBoardStore = defineStore('dashboard', () => {
     const dashboards = ref([])
 
     const wordClouds = ref([])
+    const sankeyData = ref([])
     const plotImg = ref([])
 
     const getWordCloudInfo = function() {
@@ -46,6 +47,22 @@ export const useDashBoardStore = defineStore('dashboard', () => {
             console.log(wordClouds.value)
         })
     }
+
+    const getSankeyData = function() {
+        console.log('Trying to get sankey data...')
+        axios({
+            method: 'get',
+            url: `${API_URL}/crawl/relationship/`,
+            headers: {
+                Authorization: `Token ${userStore.token}`
+            }
+        }).then((response)=>{
+            console.log("Sankey Data: ")
+            console.log(response.data)
+            sankeyData.value = response.data
+        })
+    }
+
     const getPlotImg = function(release_num) {
         console.log(`Trying to get plot-image by ${release_num}`)
         axios({
@@ -62,5 +79,5 @@ export const useDashBoardStore = defineStore('dashboard', () => {
         })
     }
 
-    return { dashboards, wordClouds, plotImg, getWordCloudInfo, getPlotImg}
+    return { dashboards, wordClouds, sankeyData, plotImg, getWordCloudInfo, getPlotImg, getSankeyData}
 })

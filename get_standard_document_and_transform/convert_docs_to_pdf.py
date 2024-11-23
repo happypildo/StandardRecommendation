@@ -3,7 +3,8 @@ import zipfile
 import os
 import threading
 import sys
-import comtypes.client
+# import comtypes.client
+import subprocess
 import time
 
 
@@ -85,25 +86,33 @@ class Unzip:
                         pdf_file_name = pdf_file_name.replace(".", "_")
 
                         out_file_path = os.path.abspath("./" + pdf_dir + "/" + pdf_file_name)
-
-                        word = comtypes.client.CreateObject('Word.Application')
-                        time.sleep(3)
-                        try:
-                            doc = word.Documents.Open(file_path)
-                        except:
-                            pass
-                        else:
-                            time.sleep(3)
-
-                            try:
-                                doc.SaveAs(out_file_path, FileFormat=17)
-                            except:
-                                doc.Close()
-                            else:
-                                time.sleep(3)
-
-                                doc.Close()
-                                word.Quit()
+                        subprocess.run([
+                            'libreoffice',
+                            '--headless',
+                            '--convert-to',
+                            'pdf',
+                            file_path,
+                            '--outdir',
+                            out_file_path
+                        ])
+                        # word = comtypes.client.CreateObject('Word.Application')
+                        # time.sleep(3)
+                        # try:
+                        #     doc = word.Documents.Open(file_path)
+                        # except:
+                        #     pass
+                        # else:
+                        #     time.sleep(3)
+                        #
+                        #     try:
+                        #         doc.SaveAs(out_file_path, FileFormat=17)
+                        #     except:
+                        #         doc.Close()
+                        #     else:
+                        #         time.sleep(3)
+                        #
+                        #         doc.Close()
+                        #         word.Quit()
 
         print(f"[✔] Successfully convert all files")
         print("------------------------------------------")
