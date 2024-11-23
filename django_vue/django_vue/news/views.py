@@ -11,6 +11,7 @@ from .crawling.news_data_crawling import Crawler
 from .crawling.extract_keywords import Extractor
 from .crawling.summarize_gpt import Summarizer
 from .crawling.link_to_standard_document import StringToWordConnection
+from .crawling.link_to_standard_series import ExtractorRelationship
 
 import re
 import json
@@ -33,8 +34,8 @@ def news_list_update(request):
     extractor = Extractor()
 
     for news in crawler.crawl_data():
-        print("In the view.py -------------------------------------")
-        print(news)
+        # print("In the view.py -------------------------------------")
+        # print(news)
         if not News.objects.filter(title=news['title']).exists():
 
             news_instance = News.objects.create(
@@ -43,7 +44,7 @@ def news_list_update(request):
             )
             
             ext_keywords = extractor.use_chat_gpt_for_extraction(content=news['contents'])
-            print("Extracted keywords: ", ext_keywords)
+            # print("Extracted keywords: ", ext_keywords)
 
             ext_keywords = ext_keywords.replace('\n', '')
             ext_keywords = ext_keywords.strip()
@@ -68,9 +69,9 @@ def news_list_update(request):
 
 @api_view(['GET'])
 def news_summarize(request, id):
-    print("------------------------")
-    print(request.user)
-    print("------------------------")
+    # print("------------------------")
+    # print(request.user)
+    # print("------------------------")
 
     # news_id를 기반으로 키워드를 일단 가져오기
     # 키워드를 request.user로 연동하기
@@ -101,11 +102,6 @@ def news_summarize(request, id):
 
 @api_view(['GET'])
 def interest_info(request):
-    # For word cloud
-    print("------------------------")
-    print(request.user)
-    print("------------------------")
-
     userKeywords = UserAction.objects.filter(user_id=request.user.id)
     userKeywords_serialized = UserActionSerializer(userKeywords, many=True)
 
@@ -114,40 +110,83 @@ def interest_info(request):
     return Response(userKeywords_serialized.data)
 
 @api_view(['GET'])
-def release_graph(request, release_num):
+def relation_series(request):
     userKeywords = UserAction.objects.filter(user_id=request.user.id)
     userKeywords_serialized = UserActionSerializer(userKeywords, many=True)
 
     keywords = []
     weights = []
-
-    print("--------------------------------")
-    # print(userKeywords_serialized.data)
     
     for data_dict in userKeywords_serialized.data:
         keywords.append(data_dict['keyword'])
         weights.append(data_dict['intensity'])
 
+    kw_dict = {}
+    for k, w in zip(keywords, weights):
+        if kw_dict.get(k, None) is None:
+            kw_dict[k] = w
+        else:
+            kw_dict[k] += w
+    
+    keywords = list(kw_dict.keys())
+    weights = list(kw_dict.values())
+
+    sorted_items = sorted(zip(weights, keywords), reverse=True)
+
+    top_weights = [weight for weight, _ in sorted_items[:5]]
+    top_keywords = [keyword for _, keyword in sorted_items[:5]]
+
+    ext = ExtractorRelationship(
+        keywords=top_keywords,
+        weights=top_weights,
+        model_name="allenai/scibert_scivocab_uncased"
+        )
+    output = ext.all_relationship()
+    print(output)
+    return JsonResponse(output)
+
+    
+
+@api_view(['GET'])
+def release_graph(request, series_num):
+    userKeywords = UserAction.objects.filter(user_id=request.user.id)
+    userKeywords_serialized = UserActionSerializer(userKeywords, many=True)
+
+    keywords = []
+    weights = []
+    
+    for data_dict in userKeywords_serialized.data:
+        keywords.append(data_dict['keyword'].lower())
+        weights.append(data_dict['intensity'])
+    
+    kw_dict = {}
+    for k, w in zip(keywords, weights):
+        if kw_dict.get(k, None) is None:
+            kw_dict[k] = w
+        else:
+            kw_dict[k] += w
+    
+    keywords = list(kw_dict.keys())
+    weights = list(kw_dict.values())
+
     stwc = StringToWordConnection(
-        release_num=release_num,
+        series_num=series_num,
         keywords=keywords,
         weights=weights,
-        model_name="bert-base-uncased"
+        model_name="allenai/scibert_scivocab_uncased"
     )    
 
     img = stwc.process()
-    print(img)
+    # print(img)
 
     return JsonResponse({'image': img})
 
 @api_view(['GET'])
 def chat(request):
-    print()
-    print("-------------------------------")
-    print(request)
+    # print()
+    # print("-------------------------------")
+    # print(request)
     data = json.loads(request.body)
     user_message = data.get("message", "")
-
-    pritn(user_message)
 
     return JsonResponse({'data': "Good"})

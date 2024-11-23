@@ -11,6 +11,7 @@ urlpatterns = [
     path('news_summarize/<int:id>/', views.news_summarize, name="news_summarize"),
 
     path('wcinfo/', views.interest_info, name="interest_info"),
-    path('release_relation/<int:release_num>/', views.release_graph, name="release_graph"),
+    path('release_relation/<int:series_num>/', views.release_graph, name="release_graph"),
+    path('relationship/', views.relation_series, name="relation_series"),
     path('chatbot/', views.chat, name="chat"),
 ]
