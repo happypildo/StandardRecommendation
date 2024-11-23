@@ -176,16 +176,16 @@ def release_graph(request, series_num):
         model_name="allenai/scibert_scivocab_uncased"
     )    
 
-    img = stwc.process()
-    # print(img)
+    # img = stwc.process()
+    # # print(img)
 
-    return JsonResponse({'image': img})
+    # return JsonResponse({'image': img})
+    data = stwc.get_network_data()
 
-@api_view(['GET'])
+    return JsonResponse(data)
+
+@api_view(['POST'])
 def chat(request):
-    # print()
-    # print("-------------------------------")
-    # print(request)
     data = json.loads(request.body)
     user_message = data.get("message", "")
 

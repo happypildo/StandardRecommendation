@@ -193,6 +193,36 @@ class StringToWordConnection:
         print("Visualizing connection graph...")
         return self.visualize_graph(scores, threshold)
 
+    def get_network_data(self):
+        string_embedding = self.get_embedding(self.string)
+        keyword_embeddings = [self.get_embedding(keyword) for keyword in self.keywords]
+
+        similarities = []
+        for idx, keyword_embedding in enumerate(keyword_embeddings):
+            similarity = np.dot(string_embedding, keyword_embedding) / (
+                np.linalg.norm(string_embedding) * np.linalg.norm(keyword_embedding) + 1e-9
+            )
+            similarities.append(similarity * self.weights[idx])
+
+        nodes = []
+        for k in self.keywords:
+            nodes.append({
+                "id": k, "group": 1
+            })
+        nodes.append({
+            "id": f"Series: {self.series_num}"
+        })
+
+        links = []
+        for idx, k in enumerate(self.keywords):
+            links.append({
+                'source': k,
+                'target': f"Series: {self.series_num}",
+                "weight": similarities[idx].item()
+            })
+        
+        return {"nodes": nodes, "links": links}
+
 
 # # Example usage
 # # Instantiate the class with a pre-trained transformer model
