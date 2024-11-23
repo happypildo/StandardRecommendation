@@ -146,5 +146,6 @@ print("[✔] All downloads completed. Unzipping will be started...")
 unzip_class.unzip_file()
 pdf_file_dir = "pdf_" + unzip_class.target_directory
 
+print("Good")
 pdf_extractor = Extractor(target_path=pdf_file_dir)
 pdf_extractor.extract_content_from_pdf()
