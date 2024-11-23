@@ -87,13 +87,13 @@ class Unzip:
 
                         out_file_path = os.path.abspath("./" + pdf_dir + "/" + pdf_file_name)
                         subprocess.run([
-                            'libreoffice',
+                            '/Applications/LibreOffice.app/Contents/MacOS/soffice',
                             '--headless',
                             '--convert-to',
                             'pdf',
                             file_path,
                             '--outdir',
-                            out_file_path
+                            pdf_dir
                         ])
                         # word = comtypes.client.CreateObject('Word.Application')
                         # time.sleep(3)
