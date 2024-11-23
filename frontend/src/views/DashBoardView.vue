@@ -2,7 +2,7 @@
 import WordCloud from "@/views/WordCloud.vue";
 import ChordDiagram from "./ChordDiagram.vue";
 import SankeyDiagram from "./Sankey.vue";
-
+import NetworkGraph from "./NetworkGraph.vue";
 import { ref, computed, onMounted } from "vue";
 import { useDashBoardStore } from "@/stores/dashboard";
 import { useUserStore } from '@/stores/user'
@@ -21,18 +21,15 @@ const getWordCloudInfo = () => {
 };
 
 const serieses = Array.from({ length: 49 }, (_, i) => `${i}`)
-const plotImg = computed(() => dashboardStore.plotImg)
-const getPlotImg = (series_num) => {
-    dashboardStore.getPlotImg(series_num);
+const networkData = computed(() => dashboardStore.networkData)
+const getNetworkData = (series_num) => {
+    dashboardStore.getNetworkData(series_num);
 }
 
 // 컴포넌트가 마운트될 때 데이터 가져오기
 onMounted(() => {
     getWordCloudInfo();
-    console.log("Updated wcInfo after getWordCloudInfo:", wcInfo.value);
-    getPlotImg(18);
-    console.log("getPlotIMAGE")
-    console.log("get Sankey!!!!!")
+    getNetworkData(18);
     getSankeyData();
 });
 
@@ -56,7 +53,7 @@ const sendMessage = async () => {
     messages.value.push({ sender: "user", text: currentMessage.value });
     console.log(currentMessage.value)
     axios({
-        method: 'get',
+        method: 'post',
         url: `${API_URL}/crawl/chatbot/`,
         headers: {
             Authorization: `Token ${userStore.token}`,
@@ -106,10 +103,8 @@ const sendMessage = async () => {
           <!-- 두 번째 행 -->
           <div class="row">
               <section class="spider-content">
-                  <!-- 이미지 표시 영역 -->
-                  <div class="image-container">
-                      <img :src="plotImg" alt="Generated Plot" v-if="plotImg" />
-                  </div>
+                  <h2>Network graph</h2>
+                  <NetworkGraph/>
               </section>
 
               <section class="chatbot-content">

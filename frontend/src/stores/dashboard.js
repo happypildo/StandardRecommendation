@@ -13,6 +13,7 @@ export const useDashBoardStore = defineStore('dashboard', () => {
 
     const wordClouds = ref([])
     const sankeyData = ref([])
+    const networkData = ref([])
     const plotImg = ref([])
 
     const getWordCloudInfo = function() {
@@ -63,7 +64,7 @@ export const useDashBoardStore = defineStore('dashboard', () => {
         })
     }
 
-    const getPlotImg = function(release_num) {
+    const getNetworkData = function(release_num) {
         console.log(`Trying to get plot-image by ${release_num}`)
         axios({
             method: 'get',
@@ -72,12 +73,14 @@ export const useDashBoardStore = defineStore('dashboard', () => {
                 Authorization: `Token ${userStore.token}`
             }
         }).then((response) => {
+            console.log("New network graph:")
             console.log(response.data)
-            console.log(response.data.image)
+            // console.log(response.data.image)
             // plotImg.value = response.data.image
-            plotImg.value = `data:image/png;base64,${response.data.image}`;
+            // plotImg.value = `data:image/png;base64,${response.data.image}`;
+            networkData.value = response.data
         })
     }
 
-    return { dashboards, wordClouds, sankeyData, plotImg, getWordCloudInfo, getPlotImg, getSankeyData}
+    return { dashboards, wordClouds, sankeyData, networkData, getWordCloudInfo, getNetworkData, getSankeyData}
 })
