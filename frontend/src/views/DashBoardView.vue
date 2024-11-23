@@ -1,5 +1,8 @@
 <script setup>
 import WordCloud from "@/views/WordCloud.vue";
+import ChordDiagram from "./ChordDiagram.vue";
+import SankeyDiagram from "./Sankey.vue";
+
 import { ref, computed, onMounted } from "vue";
 import { useDashBoardStore } from "@/stores/dashboard";
 import { useUserStore } from '@/stores/user'
@@ -17,10 +20,10 @@ const getWordCloudInfo = () => {
     dashboardStore.getWordCloudInfo();
 };
 
-const releases = Array.from({ length: 17 }, (_, i) => `${i + 4}`)
+const serieses = Array.from({ length: 49 }, (_, i) => `${i}`)
 const plotImg = computed(() => dashboardStore.plotImg)
-const getPlotImg = (release_num) => {
-    dashboardStore.getPlotImg(release_num);
+const getPlotImg = (series_num) => {
+    dashboardStore.getPlotImg(series_num);
 }
 
 // 컴포넌트가 마운트될 때 데이터 가져오기
@@ -29,7 +32,14 @@ onMounted(() => {
     console.log("Updated wcInfo after getWordCloudInfo:", wcInfo.value);
     getPlotImg(18);
     console.log("getPlotIMAGE")
+    console.log("get Sankey!!!!!")
+    getSankeyData();
 });
+
+// Sankey
+const getSankeyData = () => {
+  dashboardStore.getSankeyData();
+}
 
 // 챗봇
 // 챗봇과 사용자의 모든 메시지를 관리하는 반응형 배열
@@ -72,172 +82,106 @@ const sendMessage = async () => {
 </script>
 
 <template>
-    <p> {{wcInfo}} </p> 
+  <p> {{wcInfo}} </p> 
 
-    <div class="dashboard">
-        <header class="dashboard-header">
-        <h1>Dashboard</h1>
-        </header>
-        <main class="dashboard-content">
-            <section class="word-cloud-section">
-                <h2>Word Cloud</h2>
-                <!-- WordCloud 컴포넌트에 wcInfo 전달 -->
-                <WordCloud :words="wcInfo" />
-            </section>
+  <div class="dashboard">
+      <header class="dashboard-header">
+      <h1>Dashboard</h1>
+      </header>
+      <main class="dashboard-content">
+          <!-- 첫 번째 행 -->
+          <div class="row">
+              <section class="word-cloud-section">
+                  <h2>Word Cloud</h2>
+                  <!-- WordCloud 컴포넌트에 wcInfo 전달 -->
+                  <WordCloud :words="wcInfo" />
+              </section>
+              
+              <section class="sankey-section">
+                  <h2>Sankey Diagram</h2>
+                  <SankeyDiagram />
+              </section>
+          </div>
 
-            <section class="spider-content">
-                <!-- 이미지 표시 영역 -->
-                <div class="image-container">
-                    <img :src="plotImg" alt="Generated Plot" v-if="plotImg" />
-                    <p v-else>이미지를 로드하려면 번호를 선택하세요</p>
-                </div>
+          <!-- 두 번째 행 -->
+          <div class="row">
+              <section class="spider-content">
+                  <!-- 이미지 표시 영역 -->
+                  <div class="image-container">
+                      <img :src="plotImg" alt="Generated Plot" v-if="plotImg" />
+                  </div>
+              </section>
 
-                <!-- 버튼 리스트 -->
-                <div class="button-list">
-                    <button 
-                    v-for="release in releases" 
-                    :key="release" 
-                    @click="getPlotImg(release)"
-                    class="release-button"
-                    >
-                    Release {{ release }}
-                    </button>
-                </div>
-            </section>
+              <section class="chatbot-content">
+                  <h2>Chatbot</h2>
+                  <div class="chat-container">
+                      <!-- 채팅 메시지 영역 -->
+                      <div class="chat-messages">
+                          <!-- 메시지 목록 렌더링 -->
+                          <div
+                          class="chat-message"
+                          :class="message.sender"
+                          v-for="(message, index) in messages"
+                          :key="index"
+                          >
+                          <p>{{ message.text }}</p>
+                          </div>
+                      </div>
 
-            <section class="chatbot-content">
-                <h2>Chatbot</h2>
-                <div class="chat-container">
-                <!-- 채팅 메시지 영역 -->
-                <div class="chat-messages">
-                    <!-- 메시지 목록 렌더링 -->
-                    <div
-                    class="chat-message"
-                    :class="message.sender"
-                    v-for="(message, index) in messages"
-                    :key="index"
-                    >
-                    <p>{{ message.text }}</p>
-                    </div>
-                </div>
-
-                <!-- 입력창 -->
-                <div class="chat-input">
-                    <input
-                    type="text"
-                    v-model="currentMessage"
-                    placeholder="챗봇에게 메시지 입력..."
-                    @keyup.enter="sendMessage"
-                    />
-                    <button @click="sendMessage">보내기</button>
-                </div>
-                </div>
-            </section>
-
-        </main>
-        <footer class="dashboard-footer">
-            <p>© 2024 My Dashboard</p>
-        </footer>
-    </div>
+                      <!-- 입력창 -->
+                      <div class="chat-input">
+                          <input
+                          type="text"
+                          v-model="currentMessage"
+                          placeholder="챗봇에게 메시지 입력..."
+                          @keyup.enter="sendMessage"
+                          />
+                          <button @click="sendMessage">보내기</button>
+                      </div>
+                  </div>
+              </section>
+          </div>
+      </main>
+      <footer class="dashboard-footer">
+          <p>© 2024 My Dashboard</p>
+      </footer>
+  </div>
 </template>
 
 <style scoped>
-.dashboard {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  padding: 20px;
-}
-
-.dashboard-header {
-  font-size: 24px;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 20px;
-}
-
 .dashboard-content {
-  flex: 1;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  flex-direction: column;
-  gap: 20px;
+  flex-direction: column; /* 기본 세로 정렬 */
+  gap: 20px; /* 섹션 간 간격 */
 }
 
-.word-cloud-section {
-  width: 100%;
+.row {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-direction: row; /* 가로 정렬 */
+  flex-wrap: nowrap; /* 가로로 한 줄에 배치 */
+  justify-content: space-between; /* 양쪽 정렬 */
+  gap: 20px; /* 섹션 간 간격 */
+}
+
+/* 각 섹션 크기 조정 */
+section {
+  flex: 1; /* 모든 섹션이 동일한 너비로 설정 */
   background-color: white;
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-width: 300px; /* 최소 너비 */
 }
 
-.spider-content {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+.word-cloud-section,
+.sankey-section {
+  max-width: 45%; /* 첫 번째 행에서 두 섹션이 각각 화면의 45% 차지 */
 }
 
-.container {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  margin-top: 20px;
+.spider-content,
+.chatbot-content {
+  max-width: 45%; /* 두 번째 행에서 두 섹션이 각각 화면의 45% 차지 */
 }
-
-.image-container {
-  width: 100%; /* 이미지 영역의 너비 */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 1px solid #ccc;
-  padding: 10px;
-  height: 1000px; /* 이미지 영역의 고정 높이 */
-}
-
-.image-container img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-.button-list {
-  display: flex;
-  flex-direction: column; /* 버튼을 수직으로 정렬 */
-  margin-left: 20px;
-}
-
-.release-button {
-  padding: 10px 20px;
-  margin-bottom: 10px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.release-button:hover {
-  background-color: #0056b3;
-}
-
-.release-button:active {
-  background-color: #003d80;
-}
-
-
-
-
 
 .chatbot-content {
   margin-top: 20px;
@@ -318,5 +262,4 @@ const sendMessage = async () => {
 .chat-input button:hover {
   background-color: #3700b3;
 }
-
 </style>
