@@ -86,7 +86,7 @@ options = Options()
 options.add_argument('headless')
 
 # target_series = int(input("Enter the series number to analysis: "))
-for target_series in range(31, 56):
+for target_series in range(38, 56):
     temp_cnt = 0
     print("Current target series: ", target_series)
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),
