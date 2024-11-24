@@ -11,7 +11,8 @@ from .crawling.news_data_crawling import Crawler
 from .crawling.extract_keywords import Extractor
 from .crawling.summarize_gpt import Summarizer
 from .crawling.link_to_standard_document import StringToWordConnection
-from .crawling.link_to_standard_series import ExtractorRelationship
+from .crawling.link_to_standard_series import ExtractorRelationship, RAGInterestExtractor
+from .chatbot.recommend import RAGRecommendation
 
 import re
 import json
@@ -131,18 +132,15 @@ def relation_series(request):
     keywords = list(kw_dict.keys())
     weights = list(kw_dict.values())
 
-    sorted_items = sorted(zip(weights, keywords), reverse=True)
-
-    top_weights = [weight for weight, _ in sorted_items[:5]]
-    top_keywords = [keyword for _, keyword in sorted_items[:5]]
-
-    ext = ExtractorRelationship(
-        keywords=top_keywords,
-        weights=top_weights,
-        model_name="allenai/scibert_scivocab_uncased"
+    print("\n\n\nTEST -------------------------")
+    ext = RAGInterestExtractor(
+        keywords=keywords,
+        weights=weights,
         )
-    output = ext.all_relationship()
-    print(output)
+    output = ext.extract()
+    from pprint import pprint
+    pprint(output)
+
     return JsonResponse(output)
 
     
@@ -169,24 +167,24 @@ def release_graph(request, series_num):
     keywords = list(kw_dict.keys())
     weights = list(kw_dict.values())
 
-    stwc = StringToWordConnection(
-        series_num=series_num,
+    print("\n\n\nTEST -------------------------")
+    ext = RAGInterestExtractor(
         keywords=keywords,
         weights=weights,
-        model_name="allenai/scibert_scivocab_uncased"
-    )    
+        )
+    output = ext.extract(extracting_type=series_num)
+    from pprint import pprint
+    pprint(output)
 
-    # img = stwc.process()
-    # # print(img)
-
-    # return JsonResponse({'image': img})
-    data = stwc.get_network_data()
-
-    return JsonResponse(data)
+    return JsonResponse(output)
 
 @api_view(['POST'])
 def chat(request):
+    print("-" * 20)
     data = json.loads(request.body)
     user_message = data.get("message", "")
 
-    return JsonResponse({'data': "Good"})
+    rec = RAGRecommendation(user_message)
+    bar_data, answer = rec.generate_answer()
+
+    return JsonResponse({'data': answer, 'bar': bar_data})

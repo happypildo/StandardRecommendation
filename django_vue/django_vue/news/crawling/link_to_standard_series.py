@@ -1,55 +1,3 @@
-series_descriptions = {
-    1: "This series outlines the general aspects and fundamental principles of the GSM system, including its technical architecture, operational scenarios, and core functionalities for mobile communication networks.",
-    2: "Service-related aspects of the GSM system, detailing how user-centric services such as voice, SMS, and supplementary services are designed, implemented, and managed in a mobile network environment.",
-    3: "Explores the network architecture and design principles of the GSM system, including the structural organization of Base Stations, Mobile Switching Centers, and other network elements.",
-    4: "Focuses on the MS-BSS interface, including the specifications for communication protocols and signaling procedures between mobile stations and base station subsystems in GSM networks.",
-    5: "Describes the physical layer of the GSM system, particularly focusing on the radio path characteristics, modulation techniques, and physical channel structures used for efficient data transmission.",
-    6: "Specifications for speech codec technologies used in GSM systems to compress voice signals while maintaining high audio quality over limited bandwidth.",
-    7: "Defines the terminal adaptor interface allowing GSM mobile stations to connect and communicate with public data networks for data transmission and access services.",
-    8: "Details the BSS-MSC interface and the communication protocols that manage handover, signaling, and traffic between the Base Station Subsystem and the Mobile Switching Center.",
-    9: "Explains the interworking mechanisms between GSM and other telecommunication networks, such as PSTN, ISDN, and emerging packet-switched networks, for seamless service integration.",
-    10: "Describes connection types within the GSM Public Land Mobile Network (PLMN), including configurations for roaming, handover, and interconnection with other networks.",
-    11: "Provides equipment and type approval specifications to ensure interoperability and compliance with GSM standards across different devices and vendors.",
-    12: "Covers the operation and maintenance procedures of GSM networks, including network monitoring, fault management, and performance optimization techniques.",
-    13: "Focuses on the security-related functions of GSM networks, such as encryption, authentication, and secure key management protocols to protect user data and prevent fraud.",
-    14: "Details enhancements made to the GSM system, including new features, improved performance capabilities, and backward-compatible upgrades to existing infrastructure.",
-    15: "Describes data communication services in GSM, including circuit-switched data and General Packet Radio Service (GPRS) for internet access and multimedia messaging.",
-    16: "Focuses on the features and technical capabilities of GSM mobile stations, including hardware specifications, software capabilities, and compatibility with network services.",
-    17: "Explores the features provided by the GSM network, such as location-based services, call forwarding, and intelligent network functionalities.",
-    18: "Details the radio aspects of GSM, including frequency allocation, signal propagation characteristics, and interference management techniques.",
-    19: "Describes the processes and technologies for speech processing in GSM, including echo cancellation, voice activity detection, and error correction.",
-    20: "Focuses on data transmission methodologies in GSM, including techniques for reliable delivery, compression, and error detection across the mobile network.",
-    21: "Provides comprehensive specifications for GSM signaling protocols used for communication between network entities, such as SS7 and LAPD protocols.",
-    22: "Defines service requirements for UMTS systems, focusing on user expectations, service availability, and quality-of-service parameters in 3G networks.",
-    23: "Covers the technical realization of UMTS service aspects, including implementation frameworks, system design, and integration with legacy networks.",
-    24: "Describes signaling protocols and switching mechanisms in UMTS systems for efficient resource allocation and session management.",
-    25: "Focuses on Radio Access Network (RAN) aspects in UMTS, including specifications for Node B, RNC, and their interaction with the core network.",
-    26: "Explores codec technologies and multimedia services in UMTS, enabling advanced applications such as video streaming and interactive gaming.",
-    27: "Covers data services and terminal interfaces in UMTS, detailing protocols for internet connectivity, multimedia messaging, and device interconnectivity.",
-    28: "Provides extended specifications for signaling protocols and switching techniques, ensuring scalability and robustness in UMTS systems.",
-    29: "Focuses on core network protocols in UMTS, detailing communication standards between core components such as HLR, MSC, and SGSN.",
-    30: "Describes charging and billing mechanisms in UMTS, including techniques for usage metering, billing accuracy, and fraud prevention.",
-    31: "Provides additional specifications for security-related network functions in UMTS, ensuring data integrity and user privacy.",
-    32: "Focuses on telecommunication management, including charging management and the integration of management systems across network domains.",
-    33: "Explores security aspects in UMTS, focusing on encryption algorithms, authentication procedures, and secure communication frameworks.",
-    34: "Defines test specifications for UMTS, including compliance testing, performance benchmarking, and interoperability validation.",
-    35: "Details security algorithms used in UMTS, including cryptographic methods for encryption, integrity checking, and secure key distribution.",
-    36: "Describes Evolved Universal Terrestrial Radio Access (E-UTRA), commonly known as LTE, focusing on advanced features, high-speed data transmission, and reduced latency.",
-    37: "Explores radio measurement and protocol aspects in LTE, including channel quality indicators, feedback mechanisms, and link adaptation techniques.",
-    38: "Focuses on NR (New Radio) technology in 5G, detailing its capabilities, advanced modulation techniques, and support for massive IoT and low-latency applications.",
-    39: "Describes interworking mechanisms between 3GPP and non-3GPP systems, ensuring seamless user experience across heterogeneous networks.",
-    40: "Focuses on service aspects in 3GPP systems, including the evolution of user services and the integration of advanced functionalities in Stage 2 development.",
-    41: "Outlines the general principles and architectural aspects of 3GPP systems, including foundational concepts and long-term evolution strategies.",
-    42: "Explores service-related aspects in 3GPP systems, focusing on user-centric service enhancements and operational efficiency.",
-    43: "Details network architecture and design aspects of 3GPP systems, including core network evolution and RAN optimization techniques.",
-    44: "Focuses on MS-BSS interface specifications in 3GPP, ensuring interoperability and performance across diverse network configurations.",
-    45: "Describes physical layer aspects on the radio path in 3GPP systems, including modulation, channel coding, and resource allocation strategies.",
-    46: "Provides specifications for speech codecs in 3GPP systems, ensuring high-quality voice communication over limited bandwidth.",
-    47: "Details terminal adaptor features in 3GPP systems, enabling seamless integration with public data networks and enterprise solutions.",
-    48: "Covers BSS-MSC interface specifications in 3GPP, ensuring robust signaling and traffic management in advanced networks.",
-    49: "Explores interworking techniques between 3GPP and other network standards, enabling global connectivity and seamless roaming."
-}
-
 import torch
 from transformers import AutoTokenizer, AutoModel
 import numpy as np
@@ -61,6 +9,196 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import io
 import base64
+
+import os
+import openai
+import psycopg2
+import numpy as np
+from langchain.vectorstores import PGVector
+from langchain_openai import OpenAIEmbeddings
+from langchain.docstore.document import Document
+
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+openai.api_key = OPENAI_API_KEY
+
+
+class RAGInterestExtractor:
+    def __init__(self, keywords, weights):
+        self.keywords = keywords
+        self.weights = weights
+
+        sorted_items = sorted(zip(self.weights, self.keywords), reverse=True)
+
+        self.top_weights = [weight for weight, _ in sorted_items[:5]]
+        self.top_keywords = [keyword for _, keyword in sorted_items[:5]]
+
+        self.keywords = [keyword for _, keyword in sorted_items[:15]]
+        self.weights = [weight for weight, _ in sorted_items[:15]]
+
+        connection_string = PGVector.connection_string_from_db_params(
+            driver=os.getenv("DB_DRIVER", "psycopg2"),
+            host=os.getenv("DB_HOST", "localhost"),
+            port=int(os.getenv("DB_PORT", "5432")),
+            database=os.getenv("DB_NAME", "backend"),
+            user=os.getenv("DB_USER", "ssafy"),
+            password=os.getenv("DB_PASSWORD", "1234")
+        )
+
+        embeddings = HuggingFaceEmbeddings(
+            model_name='pritamdeka/S-BioBert-snli-multinli-stsb',
+            model_kwargs={'device':'cpu'},
+        )
+
+        # 벡터 저장소 초기화
+        self.vectorstore = PGVector(
+            connection_string=connection_string,
+            embedding_function=embeddings,
+            collection_name="series_documents",
+            # pre_delete_collection=True  # 기존 데이터를 삭제하고 새로 컬렉션 초기화
+        )
+
+    def extract(self, extracting_type=None):
+        target_series_list = []
+        if extracting_type is None:
+            # target_series_list = [i for i in range(56)]
+            target_series_list = [i for i in range(21, 39)]
+
+            gathered_series = []
+            gathered_scores = []
+            for series in target_series_list:
+                scores = []
+                for keyword in self.top_keywords:
+                    results = self.vectorstore.similarity_search_with_relevance_scores(
+                        query=keyword,
+                        k=3,
+                        filter={"series": series}
+                    )
+
+                    scores_of_keyword = [r[-1] * (w ** 1) for r, w in zip(results, self.top_weights)]
+                    sum_of_scores = sum(scores_of_keyword)
+                    scores.append(sum_of_scores)
+                
+                if sum(scores) == 0:
+                    continue
+                else:
+                    gathered_series.append(series)
+                    gathered_scores.append([sum(scores)] + scores)
+            
+            sorted_items = sorted(zip(gathered_scores, gathered_series), reverse=True, key=lambda x: x[0][0])
+            top_sorted_nodes = [series for _, series in sorted_items[:5]]
+            top_sorted_similarities = [sim for sim, _ in sorted_items[:5]]
+
+            nodes = self.top_keywords + [f'Series {s}' for s in top_sorted_nodes]
+            nodes = [{"name": n} for n in nodes]
+            links = []
+            for node_off, similarities in enumerate(top_sorted_similarities):
+                for k_idx, s in enumerate(similarities[1:]):
+                    links.append({
+                        'source': k_idx,
+                        'target': len(self.top_keywords) + node_off,
+                        'value': s
+                    })
+            
+            data = {'nodes': nodes, 'links': links}
+            return data
+        else:
+            target_series = extracting_type
+
+            scores = []
+            for keyword in self.keywords:
+                results = self.vectorstore.similarity_search_with_relevance_scores(
+                    query=keyword,
+                    k=3,
+                    filter={"series": target_series}
+                )
+
+                scores_of_keyword = [r[-1] * w for r, w in zip(results, self.top_weights)]
+                sum_of_scores = sum(scores_of_keyword)
+                scores.append(sum_of_scores)
+            print(scores)
+            nodes = []
+            for k in self.keywords:
+                nodes.append({
+                    "id": k, "group": 1
+                })
+            nodes.append({
+                "id": f"Series {target_series}"
+            })
+
+            links = []
+            for idx, k in enumerate(self.keywords):
+                links.append({
+                    'source': k,
+                    'target': f"Series {target_series}",
+                    'weight': scores[idx] + 1e-9
+                })
+            
+            data = {
+                'nodes': nodes,
+                'links': links
+            }
+
+            return data
+
+
+
+
+
+series_descriptions = {
+    1: "General aspects and principles of the GSM system.",
+    2: "Service aspects of the GSM system.",
+    3: "Network aspects and architecture of the GSM system.",
+    4: "MS-BSS interface and protocol specifications.",
+    5: "Physical layer on the radio path; General description.",
+    6: "Speech codec specifications.",
+    7: "Terminal adaptor for MS to public data networks.",
+    8: "BSS-MSC interface and protocol specifications.",
+    9: "Interworking between GSM and other networks.",
+    10: "GSM public land mobile network (PLMN) connection types.",
+    11: "Equipment and type approval specifications.",
+    12: "Operation and maintenance aspects of the GSM system.",
+    13: "Security-related network functions.",
+    14: "GSM system enhancements.",
+    15: "GSM data services.",
+    16: "GSM mobile station (MS) features.",
+    17: "GSM network features.",
+    18: "GSM radio aspects.",
+    19: "GSM speech processing.",
+    20: "GSM data transmission.",
+    21: "GSM signaling protocols.",
+    22: "Service requirements for the UMTS system.",
+    23: "Technical realization of service aspects.",
+    24: "Signaling protocols and switching.",
+    25: "Radio Access Network (RAN) aspects.",
+    26: "Codecs and multimedia services.",
+    27: "Data services and terminal interfaces.",
+    28: "Signaling protocols and switching (continued).",
+    29: "Core network protocols.",
+    30: "Charging and billing.",
+    31: "Security-related network functions.",
+    32: "Telecommunication management; Charging management.",
+    33: "Security aspects.",
+    34: "UMTS test specifications.",
+    35: "Security algorithms.",
+    36: "Evolved Universal Terrestrial Radio Access (E-UTRA); LTE.",
+    37: "Radio measurement and protocol aspects.",
+    38: "NR (New Radio) access technology.",
+    39: "Interworking between 3GPP and non-3GPP systems.",
+    40: "Service aspects; Stage 2.",
+    41: "General aspects and principles of the 3GPP system.",
+    42: "Service aspects of the 3GPP system.",
+    43: "Network aspects and architecture of the 3GPP system.",
+    44: "MS-BSS interface and protocol specifications.",
+    45: "Physical layer on the radio path; General description.",
+    46: "Speech codec specifications.",
+    47: "Terminal adaptor for MS to public data networks.",
+    48: "BSS-MSC interface and protocol specifications.",
+    49: "Interworking between 3GPP and other networks."
+}
+     
+
 
 class ExtractorRelationship:
     def __init__(self, keywords, weights, model_name="bert-base-uncased"):
