@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 
-from .models import News, NewsSerializer, Keywords, KeywordSerializer, UserAction, UserActionSerializer
+from .models import News, NewsSerializer, Keywords, KeywordSerializer, UserAction, UserActionSerializer, TopKeywords, TopKeywordsSerializer
 
 from .crawling.news_data_crawling import Crawler
 from .crawling.extract_keywords import Extractor
@@ -13,9 +13,95 @@ from .crawling.summarize_gpt import Summarizer
 from .crawling.link_to_standard_document import StringToWordConnection
 from .crawling.link_to_standard_series import ExtractorRelationship, RAGInterestExtractor
 from .chatbot.recommend import RAGRecommendation
-
+from django.db.models import Sum
 import re
 import json
+
+
+@api_view(['GET'])
+def get_news_trends(request):
+    print("[Django news views.py] get_news_trends is called...")
+    
+    user_id = request.user.id  # 요청한 사용자의 ID
+    if not user_id:
+        return Response({"error": "User ID is required"}, status=400)
+    
+    # 상위 10개의 키워드 가져오기
+    top_keywords = TopKeywords.objects.order_by('-count')[:10]
+    serializer = TopKeywordsSerializer(top_keywords, many=True)
+    top_keywords_data = serializer.data
+    # 키워드별 num_of_clicks 및 비율 계산
+    results = []
+    for keyword_data in top_keywords_data:
+        keyword = keyword_data['keyword']
+        count = keyword_data['count']
+
+        # 해당 사용자와 키워드에 대한 num_of_clicks 가져오기
+        user_action = UserAction.objects.filter(user_id=user_id, keyword=keyword).aggregate(total_clicks=Sum('num_of_clicks'))
+        num_of_clicks = user_action['total_clicks'] or 0  # None 방지
+
+        # 비율 계산
+        ratio = num_of_clicks / count if count > 0 else 0
+        ratio = ratio if ratio < 1 else 1
+        # results.append({
+        #     "keyword": keyword,
+        #     "count": count,
+        #     "num_of_clicks": num_of_clicks,
+        #     "ratio": ratio,
+        # })
+        results.append({
+            'name': keyword,
+            'value': ratio
+        })
+
+    return Response(results)
+
+@api_view(['GET'])
+def others_trends(request, keyword):
+    try:
+        # 요청한 사용자의 ID
+        current_user_id = request.user.id
+
+        # 사용자별 특정 키워드의 클릭 횟수 합산
+        user_clicks = (
+            UserAction.objects.filter(keyword=keyword)
+            .values('user_id')  # 사용자 ID별로 그룹화
+            .annotate(total_clicks=Sum('num_of_clicks'))  # 클릭 횟수 합산
+            .order_by('-total_clicks')  # 클릭 횟수 기준 내림차순 정렬
+        )
+        
+        # 사용자 정보를 추가하여 데이터 구성
+        user_ids = [user_click['user_id'] for user_click in user_clicks]
+
+        data = [
+            {
+                "user_id": user_click['user_id'],
+                "total_clicks": user_click['total_clicks'] or 0,  # 클릭 수가 없으면 0
+                "is_current_user": user_click['user_id'] == current_user_id,  # 요청한 사용자와 동일 여부
+            }
+            for user_click in user_clicks
+        ]
+        data.append({
+            "user_id": 2,
+            "total_clicks": 5,
+            "is_current_user": False
+        })
+        data.append({
+            "user_id": 3,
+            "total_clicks": 10,
+            "is_current_user": False
+        })
+        data.append({
+            "user_id": 4,
+            "total_clicks": 40,
+            "is_current_user": False
+        })
+
+        return JsonResponse(data, safe=False, status=200)
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+    
 
 @api_view(['GET'])
 def news_list(request):

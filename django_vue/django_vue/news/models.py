@@ -24,6 +24,17 @@ class KeywordSerializer(serializers.ModelSerializer):
         fields = ['id', 'keyword', 'intensity']
 
 
+class TopKeywords(models.Model):
+    keyword = models.CharField(max_length=50, unique=True)  # 키워드는 고유하게 저장
+    count = models.PositiveIntegerField(default=0)  # 등장 횟수
+
+
+class TopKeywordsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TopKeywords
+        fields = ['keyword', 'count']  # 반환할 필드
+        
+
 class NewsSerializer(serializers.ModelSerializer):
     keywords = KeywordSerializer(many=True, read_only=True)
 
@@ -35,6 +46,7 @@ class NewsSerializer(serializers.ModelSerializer):
 class UserAction(models.Model):
     keyword = models.CharField(max_length=50)
     intensity = models.FloatField(null=True)
+    num_of_clicks = models.IntegerField(default=0)
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='actions')
 
@@ -45,3 +57,4 @@ class UserActionSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserAction
         fields = ["id", "keyword", "intensity", "keywords"]
+

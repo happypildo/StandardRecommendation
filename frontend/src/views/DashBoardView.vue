@@ -4,7 +4,7 @@ import ChordDiagram from "./ChordDiagram.vue";
 import SankeyDiagram from "./Sankey.vue";
 import NetworkGraph from "./NetworkGraph.vue";
 import BarGraph from "./BarGraph.vue";
-import Heatmap from "./Heatmap.vue";
+import Circular from "./CircularBarPlot.vue";
 
 import { ref, computed, onMounted, watch } from "vue";
 import { useDashBoardStore } from "@/stores/dashboard";
@@ -28,6 +28,7 @@ const networkData = computed(() => dashboardStore.networkData)
 const getNetworkData = (series_num) => {
     dashboardStore.getNetworkData(series_num);
 }
+
 
 // 컴포넌트가 마운트될 때 데이터 가져오기
 onMounted(() => {
@@ -99,8 +100,8 @@ const sendMessage = async () => {
       </header>
       <main class="dashboard-content">
           <div class="row">
-            <h2> Heat map </h2>
-            <Heatmap/>
+            <h2> Circular bar </h2>
+            <Circular/>
           </div>
 
           <!-- 첫 번째 행 -->
