@@ -14,6 +14,7 @@ export const useDashBoardStore = defineStore('dashboard', () => {
     const wordClouds = ref([])
     const sankeyData = ref([])
     const networkData = ref([])
+    const trendsData = ref([])
 
     const barData = ref([])
 
@@ -83,5 +84,19 @@ export const useDashBoardStore = defineStore('dashboard', () => {
         })
     }
 
-    return { dashboards, wordClouds, sankeyData, networkData, barData, getWordCloudInfo, getNetworkData, getSankeyData}
+    const getNewsTrendsData = function() {
+        console.log("[Dashboard.js] getNewsTrendsData is called...")
+        axios({
+            method: 'get',
+            url: `${API_URL}/crawl/trends/`,
+            headers: {
+                Authorization: `Token ${userStore.token}`
+            }
+        }).then((response) => {
+            console.log(response.data)
+            trendsData.value = response.data
+        })
+    }
+
+    return { dashboards, wordClouds, sankeyData, networkData, barData, trendsData, getWordCloudInfo, getNetworkData, getSankeyData, getNewsTrendsData}
 })
