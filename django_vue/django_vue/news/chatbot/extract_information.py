@@ -14,6 +14,16 @@ class Extractor:
         self.extracted_data = []
         self.target_path = target_path
 
+    def is_valid_title(self, str):
+        # 정규 표현식 패턴 정의
+        pattern = r"V\d+\.\d+\.\d+"
+        
+        # 패턴 매칭
+        match = re.search(pattern, str)
+        
+        # 패턴이 있으면 True, 없으면 False 반환
+        return match is not None
+
     def extract_content_from_pdf(self):
         pdf_files = glob.glob(f"{self.target_path}/*.pdf")
 
@@ -31,13 +41,23 @@ class Extractor:
             pdf.close()
             try:
                 sp_text = all_text.split("\n")
-                title = sp_text[0]
+                title = sp_text[0].replace("\n", " ")
                 
+                if not self.is_valid_title(title):
+                    continue
+
                 area_s = all_text.index('Technical Report')
                 area_e = all_text.index('The present document has been developed within the 3rd Generation Partnership Project')
                 area = all_text[area_s:area_e]
-                print(title, area)
+                area_s = area.index('3rd Generation Partnership Project')
+                area = area[area_s + len('3rd Generation Partnership Project'):]
+                area = area.replace("\n", " ")
 
+                if area.strip() == "":
+                    continue
+
+                print(title, area)
+                
                 pattern = r"(?<=\n)[\w\s]+(?=\.{5,})"
                 matches = re.findall(pattern, all_text)
 
@@ -56,11 +76,21 @@ class Extractor:
                         if temp.isdigit():
                             pass
                         else:
+                            temp = temp.replace("3GPP", "")
+                            temp = temp.replace("TR", "")
+                            temp = temp.replace("TS", "")
+                            
+                            if temp.strip() == "":
+                                continue
                             processed_indices.append(temp)
-                print()
-                print(set(processed_indices))
-                print()
+                processed_indices = set(processed_indices)
+                if len(processed_indices) == 0:
+                    continue
 
+                print()
+                print(", ".join(processed_indices))
+                print()
+            
                 self.extracted_data.append({
                     "title": title,
                     "area": area,

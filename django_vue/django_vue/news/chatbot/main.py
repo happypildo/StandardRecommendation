@@ -66,7 +66,7 @@ vectorstore = PGVector(
     connection_string=connection_string,
     embedding_function=embeddings,
     collection_name="series_documents",
-    # pre_delete_collection=True  # 기존 데이터를 삭제하고 새로 컬렉션 초기화
+    pre_delete_collection=True  # 기존 데이터를 삭제하고 새로 컬렉션 초기화
 )
 
 def file_download_with_thread(download_link, path, file_name):
@@ -86,8 +86,11 @@ options = Options()
 options.add_argument('headless')
 
 # target_series = int(input("Enter the series number to analysis: "))
-for target_series in range(38, 56):
-    temp_cnt = 0
+
+for target_series in range(21, 39):
+    if target_series == 37:
+        continue
+
     print("Current target series: ", target_series)
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),
                             options=options)
@@ -156,6 +159,7 @@ for target_series in range(38, 56):
                 print("Downloading documents...")
                 print(f"   The amount of standards to download: {amount_of_standards} with hopping {amount_of_hopping}.")
                 web_cnt = 0
+                temp_cnt = 0
                 for i in range(0, amount_of_standards, amount_of_hopping):
                     for offset in range(min(amount_of_hopping, amount_of_standards - web_cnt * amount_of_hopping)):
                         row_of_standard = driver.find_element(By.ID, f'dnn_ctr593_SpecificationsList_rgSpecificationList_ctl00__{offset}')
@@ -180,22 +184,22 @@ for target_series in range(38, 56):
                                                     args=(download_link, target_series_title, file_name))
                             threads.append(thread)
                             thread.start()
+                            temp_cnt += 1
+                            if temp_cnt == 5:
+                                break
                         except:
                             print(f"\t\t|---[!] No available standard found, skipping...")
 
                         driver.close()
                         driver.switch_to.window(driver.window_handles[0])
 
-                        temp_cnt += 1
-                        if temp_cnt > 5:
-                            break
                     web_cnt += 1
                     driver.find_element(By.CLASS_NAME, "rgPageNext").click()
                     original_window = driver.current_window_handle
+                    if temp_cnt == 5:
+                        break
 
                     print(f"\tNow...............[{web_cnt * amount_of_hopping}/{amount_of_standards}]")
-                    if temp_cnt > 5:
-                            break
             except:
                 pass
             print("")
@@ -217,7 +221,7 @@ for target_series in range(38, 56):
     print("Insert to table...")
     docs = []
     for data in extracted_data:
-        content = f"제목: {data['title']}\n\n문서 영역: {data['area']}\n\n목차 정보: {data['indices']}\n\n문서가 다루는 내용: {data['scope']}"
+        content = f"제목: {data['title']}\n\n문서 영역: {data['area']}\n\n목차 정보: {data['indices']}\n\n문서의 시리즈 번호 {target_series}"
 
         # 메타데이터 구성
         metadata = {
@@ -233,16 +237,15 @@ for target_series in range(38, 56):
             metadata=data['metadata']
         ))
     vectorstore.add_documents(docs)
-
-    results = vectorstore.similarity_search_with_score(
-            "3D 공간에 대한 표준 문서 버젼을 알려줘",
-            k=3,
-            filter={"series": target_series}
-        )
+    # results = vectorstore.similarity_search_with_score(
+    #         "3D 공간에 대한 표준 문서 버젼을 알려줘",
+    #         k=3,
+    #         filter={"series": target_series}
+    #     )
     
-    print("중간 검색 결과 -----------------------")
-    print(results)
-    print()
+    # print("중간 검색 결과 -----------------------")
+    # print(results)
+    # print()
     # for i, result in enumerate(results, 1):
     #     print(f"\n=== 검색 결과 {i} ===")
     #     print(f"제목: {result['title']}")

@@ -14,7 +14,8 @@ export const useDashBoardStore = defineStore('dashboard', () => {
     const wordClouds = ref([])
     const sankeyData = ref([])
     const networkData = ref([])
-    const plotImg = ref([])
+
+    const barData = ref([])
 
     const getWordCloudInfo = function() {
         console.log("Trying to get word-cloud information...")
@@ -82,5 +83,5 @@ export const useDashBoardStore = defineStore('dashboard', () => {
         })
     }
 
-    return { dashboards, wordClouds, sankeyData, networkData, getWordCloudInfo, getNetworkData, getSankeyData}
+    return { dashboards, wordClouds, sankeyData, networkData, barData, getWordCloudInfo, getNetworkData, getSankeyData}
 })

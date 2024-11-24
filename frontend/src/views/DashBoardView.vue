@@ -3,7 +3,10 @@ import WordCloud from "@/views/WordCloud.vue";
 import ChordDiagram from "./ChordDiagram.vue";
 import SankeyDiagram from "./Sankey.vue";
 import NetworkGraph from "./NetworkGraph.vue";
-import { ref, computed, onMounted } from "vue";
+import BarGraph from "./BarGraph.vue";
+import Heatmap from "./Heatmap.vue";
+
+import { ref, computed, onMounted, watch } from "vue";
 import { useDashBoardStore } from "@/stores/dashboard";
 import { useUserStore } from '@/stores/user'
 import axios from 'axios'
@@ -29,7 +32,7 @@ const getNetworkData = (series_num) => {
 // 컴포넌트가 마운트될 때 데이터 가져오기
 onMounted(() => {
     getWordCloudInfo();
-    getNetworkData(18);
+    getNetworkData(38);
     getSankeyData();
 });
 
@@ -44,6 +47,11 @@ const messages = ref([
   { sender: "bot", text: "안녕하세요! 저는 챗봇입니다. 무엇을 도와드릴까요?" },
 ]); // 초기 챗봇 메시지
 const currentMessage = ref(""); // 입력창에 입력된 메시지
+
+const barData = ref([
+  { label: "Category A", value: 30 },
+  { label: "Category B", value: 50 },
+]);
 
 // Django에서 챗봇 응답을 받아오는 함수
 const sendMessage = async () => {
@@ -60,11 +68,15 @@ const sendMessage = async () => {
             "Content-Type": "application/json",
         },
         data: {
-            message: currentMessage.value,
+            message: currentMessage.value
         },
     }).then((response) => {
         console.log(response.data)
-
+        console.log(response.data.bar)
+        console.log("Before Updated barData:", barData.value);
+        barData.value = response.data.bar;
+        // barData.value = [{'label': 'bb', 'value': 100}]
+        console.log("After Updated barData:", barData.value);
         const botReponse = response.data
 
         messages.value.push({sender:'bot', text: botReponse})
@@ -79,13 +91,18 @@ const sendMessage = async () => {
 </script>
 
 <template>
-  <p> {{wcInfo}} </p> 
+  <!-- <p> {{wcInfo}} </p>  -->
 
   <div class="dashboard">
       <header class="dashboard-header">
       <h1>Dashboard</h1>
       </header>
       <main class="dashboard-content">
+          <div class="row">
+            <h2> Heat map </h2>
+            <Heatmap/>
+          </div>
+
           <!-- 첫 번째 행 -->
           <div class="row">
               <section class="word-cloud-section">
@@ -109,6 +126,11 @@ const sendMessage = async () => {
 
               <section class="chatbot-content">
                   <h2>Chatbot</h2>
+                  <div class="barChart">
+                    <h1>Bar graph</h1>
+                    <BarGraph :barData="barData"/>
+                  </div>
+
                   <div class="chat-container">
                       <!-- 채팅 메시지 영역 -->
                       <div class="chat-messages">
@@ -131,7 +153,7 @@ const sendMessage = async () => {
                           placeholder="챗봇에게 메시지 입력..."
                           @keyup.enter="sendMessage"
                           />
-                          <button @click="sendMessage">보내기</button>
+                          <button @click="sendMessage(currentMessage.value)">보내기</button>
                       </div>
                   </div>
               </section>
