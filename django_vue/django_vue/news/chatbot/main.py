@@ -3,6 +3,11 @@ In this project,
 
 We aim to get 3GPP standard documents and to transform docs to pdf file.
 """
+import warnings
+
+# 모든 경고 무시
+warnings.filterwarnings("ignore")
+
 from selenium import webdriver                                  # 동적 사이트 수집
 from webdriver_manager.chrome import ChromeDriverManager        # 크롬 드라이버 설치
 from selenium.webdriver.chrome.service import Service           # 자동적 접근
@@ -13,6 +18,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 import requests
 import os
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import threading
 
 from convert_docs_to_pdf import Unzip
@@ -21,21 +27,47 @@ from extract_information import Extractor
 import openai
 import psycopg2
 import numpy as np
+from langchain.vectorstores import PGVector
+from langchain_openai import OpenAIEmbeddings
+from langchain.docstore.document import Document
+
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 openai.api_key = OPENAI_API_KEY
 
-conn = psycopg2.connect(
-    dbname='backend',
-    user='ssafy',
-    password='1234',
-    host='localhost',
-    port='5432'
+# 데이터베이스 연결 문자열 생성
+connection_string = PGVector.connection_string_from_db_params(
+    driver=os.getenv("DB_DRIVER", "psycopg2"),
+    host=os.getenv("DB_HOST", "localhost"),
+    port=int(os.getenv("DB_PORT", "5432")),
+    database=os.getenv("DB_NAME", "backend"),
+    user=os.getenv("DB_USER", "ssafy"),
+    password=os.getenv("DB_PASSWORD", "1234")
 )
-cursor = conn.cursor()
 
-def get_embedding(text, model="text-embedding-ada-002"):
-    response = openai.Embedding.create(input=text, model=model)
-    return response['data'][0]['embedding']
+# 임베딩 모델 초기화
+# embeddings = OpenAIEmbeddings()
+
+# # 벡터 저장소 초기화
+# vectorstore = PGVector(
+#     connection_string=connection_string,
+#     embedding_function=embeddings,
+#     collection_name="series_documents"
+# )
+embeddings = HuggingFaceEmbeddings(
+    model_name='pritamdeka/S-BioBert-snli-multinli-stsb',
+    model_kwargs={'device':'cpu'},
+    encode_kwargs={'normalize_embeddings':True},
+)
+
+# 벡터 저장소 초기화
+vectorstore = PGVector(
+    connection_string=connection_string,
+    embedding_function=embeddings,
+    collection_name="series_documents",
+    # pre_delete_collection=True  # 기존 데이터를 삭제하고 새로 컬렉션 초기화
+)
 
 def file_download_with_thread(download_link, path, file_name):
     try:
@@ -54,7 +86,7 @@ options = Options()
 options.add_argument('headless')
 
 # target_series = int(input("Enter the series number to analysis: "))
-for target_series in range(0, 56):
+for target_series in range(31, 56):
     temp_cnt = 0
     print("Current target series: ", target_series)
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),
@@ -73,11 +105,6 @@ for target_series in range(0, 56):
     for idx, label in enumerate(labels):
         WebDriverWait(driver, 10).until(lambda driver: label.text.strip() != "")
         series_num = int(labels[idx].text.split('.')[0])
-
-        cursor.execute(
-            f"INSERT INTO series (series_number, series_title) VALUES ({series_num}, '{labels[idx].text.split('.')[1]}') ON CONFLICT (series_number) DO NOTHING;"
-        )
-        conn.commit()
     
         series_dict[series_num] = (idx, label.text)
         
@@ -98,6 +125,8 @@ for target_series in range(0, 56):
         # target_series_title이 이미 존재하는지부터 확인.
         target_series_title = target_series_title.replace(" ", "_")
         target_series_title = target_series_title.replace(".", "_")
+        target_series_title = target_series_title.replace(",", "_")
+        target_series_title = target_series_title.replace("/", "_")
         unzip_class.setter(target_series_title)
         if os.path.isdir(target_series_title):
             print("The selected standard is already processed.")
@@ -186,48 +215,36 @@ for target_series in range(0, 56):
 
     # 임베딩 후 데이터베이스에 삽입...
     print("Insert to table...")
-    print(extracted_data)
-    # for data in extracted_data:
-    #     print(data)
-    #     content = f"제목: {data['title']}\n\n문서 영역: {data['area']}\n\n목차 정보: {data['indices']}\n\n문서가 다루는 내용: {data['scope']}"
-
-    #     embedding = get_embedding(content)
-    #     embedding_arr = np.array(embedding).tolist()
-
-    #     cursor.execute(
-    #         f"INSERT INTO series_detail (series_id, title, area, indices, scope, content, embedding) VALUES ({target_series}, '{data['title']}', '{data['area']}', '{data['indices']}', '{data['scope']}', '{content}', '{embedding_arr}');"
-    #     )
-    #     conn.commit()
+    docs = []
     for data in extracted_data:
-        print(data)
         content = f"제목: {data['title']}\n\n문서 영역: {data['area']}\n\n목차 정보: {data['indices']}\n\n문서가 다루는 내용: {data['scope']}"
 
-        embedding = get_embedding(content)
-        embedding_arr = np.array(embedding).tolist()
+        # 메타데이터 구성
+        metadata = {
+            'title': data['title'],
+            'series': target_series
+        }
+        data = {
+            'content': content,
+            'metadata': metadata
+        }
+        docs.append(Document(
+            page_content=data['content'],
+            metadata=data['metadata']
+        ))
+    vectorstore.add_documents(docs)
 
-        query = "SELECT id FROM series WHERE series_number = %s;"
-        cursor.execute(query, (target_series,))
-
-        # 결과 가져오기
-        result = cursor.fetchone()  # 하나의 행만 가져옴
-        if result:
-            series_id = result[0]
-            print(f"Series ID: {series_id}")
-
-            query = """
-            INSERT INTO series_detail (series_id, title, area, indices, scope, content, embedding) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s);
-            """
-            data_to_insert = (
-                series_id,
-                data['title'],
-                data['area'],
-                data['indices'],
-                data['scope'],
-                content,
-                str(embedding_arr)  # embedding 배열을 문자열로 변환
-            )
-            cursor.execute(query, data_to_insert)
-            conn.commit()    
-        else:
-            print(f"No entry found for series_number = {target_series}")
+    results = vectorstore.similarity_search_with_score(
+            "3D 공간에 대한 표준 문서 버젼을 알려줘",
+            k=3,
+            filter={"series": target_series}
+        )
+    
+    print("중간 검색 결과 -----------------------")
+    print(results)
+    print()
+    # for i, result in enumerate(results, 1):
+    #     print(f"\n=== 검색 결과 {i} ===")
+    #     print(f"제목: {result['title']}")
+    #     print(f"유사도: {result['similarity']:.4f}")
+    #     print(f"내용 미리보기: {result['content'][:200]}...")
