@@ -99,23 +99,21 @@ const sendMessage = async () => {
       <h1>Dashboard</h1>
       </header>
       <main class="dashboard-content">
+          <h2> 💌 통신에 대한 나의 사랑은 얼마일까 (❁´◡`❁) </h2>
           <div class="row">
-            <h2> Circular bar </h2>
             <Circular/>
           </div>
 
           <!-- 첫 번째 행 -->
-          <div class="row">
-              <section class="word-cloud-section">
-                  <h2>Word Cloud</h2>
-                  <!-- WordCloud 컴포넌트에 wcInfo 전달 -->
-                  <WordCloud :words="wcInfo" />
-              </section>
-              
-              <section class="sankey-section">
-                  <h2>Sankey Diagram</h2>
-                  <SankeyDiagram />
-              </section>
+          <div class='chart-container'>
+            <div class="chart-item">
+                <h2> 📚 내가 관심있게 볼만한 표준 시리즈는 무엇일까 😲 </h2>
+                <SankeyDiagram />
+            </div>
+            <div class='chart-item'>
+              <h2> 💨 내가 관심있게 보았던 키워드들은 무엇이 있을까 🤔 </h2>
+              <WordCloud :words="wcInfo" />
+            </div>
           </div>
 
           <!-- 두 번째 행 -->
@@ -169,50 +167,85 @@ const sendMessage = async () => {
 <style scoped>
 .dashboard-content {
   display: flex;
-  flex-direction: column; /* 기본 세로 정렬 */
-  gap: 20px; /* 섹션 간 간격 */
+  flex-direction: column;
+  gap: 30px; /* 섹션 간의 간격을 넓힘 */
+  padding: 20px;
+  background-color: #f9f9f9; /* 전체 배경색 */
 }
+
+/* ---------------------------------------------------------------  */
+.chart-container {
+  display: grid; /* 2x2 구조를 만들기 위해 grid 사용 */
+  grid-template-columns: 1fr 1fr; /* 두 열로 나눔 */
+  gap: 20px; /* 아이템 간 간격 */
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  background-color: #f9f9f9; /* 배경색 추가 */
+  border-radius: 10px;
+}
+.chart-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* 위쪽에 정렬 */
+  align-items: center;
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+.chart-item h2 {
+  height: 50px; /* 고정된 높이 설정 */
+  line-height: 50px; /* 텍스트 수직 중앙 정렬 */
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+}
+/* ---------------------------------------------------------------  */
 
 .row {
   display: flex;
-  flex-direction: row; /* 가로 정렬 */
-  flex-wrap: nowrap; /* 가로로 한 줄에 배치 */
-  justify-content: space-between; /* 양쪽 정렬 */
-  gap: 20px; /* 섹션 간 간격 */
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 20px;
 }
 
-/* 각 섹션 크기 조정 */
 section {
-  flex: 1; /* 모든 섹션이 동일한 너비로 설정 */
+  flex: 1;
   background-color: white;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  min-width: 300px; /* 최소 너비 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+section:hover {
+  transform: translateY(-3px); /* 박스를 약간 위로 올리는 효과 */
 }
 
 .word-cloud-section,
-.sankey-section {
-  max-width: 45%; /* 첫 번째 행에서 두 섹션이 각각 화면의 45% 차지 */
-}
-
+.sankey-section,
 .spider-content,
 .chatbot-content {
-  max-width: 45%; /* 두 번째 행에서 두 섹션이 각각 화면의 45% 차지 */
+  max-width: 48%;
 }
 
-.chatbot-content {
-  margin-top: 20px;
-  background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+/* 제목 스타일 */
+section h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #333;
 }
 
+/* 챗봇 스타일 */
 .chat-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
 }
 
 .chat-messages {
@@ -222,62 +255,80 @@ section {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 15px;
   border: 1px solid #ddd;
-  padding: 10px;
-  border-radius: 5px;
+  border-radius: 10px;
   background-color: #f9f9f9;
 }
 
 .chat-message.user {
   align-self: flex-end;
-  background-color: #e1f5fe;
+  background-color: #e8f0fe;
   color: #000;
-  padding: 10px 15px;
-  border-radius: 10px 10px 0 10px;
-  max-width: 70%;
-  word-break: break-word;
+  padding: 12px 18px;
+  border-radius: 12px 12px 0 12px;
   font-size: 14px;
+  max-width: 75%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .chat-message.bot {
   align-self: flex-start;
   background-color: #fff;
   color: #000;
-  padding: 10px 15px;
-  border-radius: 10px 10px 10px 0;
-  max-width: 70%;
-  word-break: break-word;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 12px 18px;
+  border-radius: 12px 12px 12px 0;
   font-size: 14px;
+  max-width: 75%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .chat-input {
   display: flex;
   gap: 10px;
-  padding: 10px;
-  border-top: 1px solid #ddd;
+  padding: 15px;
   background-color: #fff;
+  border-top: 1px solid #ddd;
 }
 
 .chat-input input {
   flex: 1;
-  padding: 10px;
+  padding: 10px 15px;
   border: 1px solid #ccc;
   border-radius: 5px;
   font-size: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .chat-input button {
   padding: 10px 15px;
-  background-color: #6200ea;
+  background-color: #007bff;
   color: white;
   border: none;
   border-radius: 5px;
-  cursor: pointer;
   font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .chat-input button:hover {
-  background-color: #3700b3;
+  background-color: #0056b3;
 }
+
+/* 글쓰기 버튼 스타일 */
+.dashboard-header button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.dashboard-header button:hover {
+  background-color: #0056b3;
+}
+
 </style>

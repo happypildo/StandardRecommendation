@@ -47,7 +47,7 @@ class RAGInterestExtractor:
         )
 
         embeddings = HuggingFaceEmbeddings(
-            model_name='pritamdeka/S-BioBert-snli-multinli-stsb',
+            model_name='allenai/scibert_scivocab_uncased',
             model_kwargs={'device':'cpu'},
         )
 
