@@ -14,7 +14,8 @@ import os
 import openai
 import psycopg2
 import numpy as np
-from langchain.vectorstores import PGVector
+# from langchain.vectorstores import PGVector
+from langchain_community.vectorstores import PGVector
 from langchain_openai import OpenAIEmbeddings
 from langchain.docstore.document import Document
 

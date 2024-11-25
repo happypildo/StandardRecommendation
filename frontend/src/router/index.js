@@ -9,6 +9,7 @@ import SignupView from '@/views/SignupView.vue'
 import BoardCreateView from '@/views/BoardCreateView.vue'
 import NewsView from '@/views/NewsViewer.vue'
 import DashBoardView from '@/views/DashBoardView.vue'
+import BoardDetail from '@/views/BoardDetail.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,6 +18,13 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
+    },
+
+    {
+      path: '/board/:id',  // 동적 라우트로 게시글 ID를 전달
+      name: 'board-detail',
+      component: BoardDetail,
+      props: true  // 라우트 파라미터를 컴포넌트의 props로 전달
     },
 
     {
