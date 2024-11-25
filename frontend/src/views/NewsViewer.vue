@@ -120,7 +120,7 @@ onMounted(() => {
       <p class="content">내용: {{ post.content }}</p>
 
       <!-- 키워드 출력 -->
-      <p class="keyword">키워드: {{ post.keywords }}</p>
+      <!-- <p class="keyword">키워드: {{ post.keywords }}</p> -->
 
       <!-- Summarize 버튼 -->
       <button 

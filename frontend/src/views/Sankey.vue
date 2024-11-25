@@ -44,8 +44,8 @@ const drawSankeyDiagram = (data) => {
   const svg = d3
     .select(chart.value)
     .append("svg")
-    .attr("width", width)
-    .attr("height", height + 150)
+    .attr("width", width + 300)
+    .attr("height", height)
     .append("g")
     .attr("transform", `translate(${margin.left}, ${margin.top})`);
 

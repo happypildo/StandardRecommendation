@@ -51,7 +51,8 @@ const drawBarChart = (data) => {
     .scaleBand()
     .domain(data.map((d) => d.label)) // 각 데이터의 label
     .range([0, innerWidth])
-    .padding(0.2);
+    .paddingInner(0.4) // 막대 간 간격
+    .paddingOuter(0.2);
 
   // Y축 스케일 (값)
   const yScale = d3
@@ -65,7 +66,7 @@ const drawBarChart = (data) => {
     .attr("transform", `translate(0,${innerHeight})`) // X축 위치 설정
     .call(d3.axisBottom(xScale)) // X축 생성
     .selectAll("text")
-    .attr("transform", "rotate(-45)") // 텍스트 회전
+    .attr("transform", "rotate(0)") // 텍스트 회전
     .style("text-anchor", "end"); // 텍스트 끝 정렬
 
   // Y축 추가
@@ -78,10 +79,14 @@ const drawBarChart = (data) => {
     .join("rect")
     .attr("class", "bar")
     .attr("x", (d) => xScale(d.label))
-    .attr("y", (d) => yScale(d.value))
+    .attr("y", innerHeight) // 처음에는 막대가 0 높이
     .attr("width", xScale.bandwidth())
-    .attr("height", (d) => innerHeight - yScale(d.value))
-    .attr("fill", "steelblue");
+    .attr("height", 0) // 처음에는 0으로 시작
+    .attr("fill", "#69b3a2") // 기본 색상
+    .transition() // 트랜지션 추가
+    .duration(800)
+    .attr("y", (d) => yScale(d.value))
+    .attr("height", (d) => innerHeight - yScale(d.value));
 
   // 값 레이블 추가
   svg

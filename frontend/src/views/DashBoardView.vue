@@ -5,6 +5,8 @@ import SankeyDiagram from "./Sankey.vue";
 import NetworkGraph from "./NetworkGraph.vue";
 import BarGraph from "./BarGraph.vue";
 import Circular from "./CircularBarPlot.vue";
+import SecondRow from "./SecondRow.vue";
+
 
 import { ref, computed, onMounted, watch } from "vue";
 import { useDashBoardStore } from "@/stores/dashboard";
@@ -29,14 +31,6 @@ const getNetworkData = (series_num) => {
     dashboardStore.getNetworkData(series_num);
 }
 
-
-// 컴포넌트가 마운트될 때 데이터 가져오기
-onMounted(() => {
-    getWordCloudInfo();
-    getNetworkData(38);
-    getSankeyData();
-});
-
 // Sankey
 const getSankeyData = () => {
   dashboardStore.getSankeyData();
@@ -46,12 +40,15 @@ const getSankeyData = () => {
 // 챗봇과 사용자의 모든 메시지를 관리하는 반응형 배열
 const messages = ref([
   { sender: "bot", text: "안녕하세요! 저는 챗봇입니다. 무엇을 도와드릴까요?" },
+  { sender: "bot", text: "📚 저는 입력해주신 내용을 바탕으로 3개의 표준 문서를 추천해 드릴 수 있어요! 당신의 통신을 향한 사랑을 제가 적합한 표준 문서로 보답해 드릴게요❤️❤️❤️" },
+  { sender: "bot", text: "🔠 입력 예시) Study on mmWave" },
 ]); // 초기 챗봇 메시지
 const currentMessage = ref(""); // 입력창에 입력된 메시지
 
 const barData = ref([
   { label: "Category A", value: 30 },
   { label: "Category B", value: 50 },
+  { label: "Category C", value: 70 },
 ]);
 
 // Django에서 챗봇 응답을 받아오는 함수
@@ -78,7 +75,7 @@ const sendMessage = async () => {
         barData.value = response.data.bar;
         // barData.value = [{'label': 'bb', 'value': 100}]
         console.log("After Updated barData:", barData.value);
-        const botReponse = response.data
+        const botReponse = response.data.data;
 
         messages.value.push({sender:'bot', text: botReponse})
     }).catch((error) => {
@@ -89,6 +86,20 @@ const sendMessage = async () => {
     currentMessage.value = ""; // 입력창 초기화
 };
 
+
+// 컴포넌트가 마운트될 때 데이터 가져오기
+onMounted(() => {
+    getWordCloudInfo();
+    getNetworkData(38);
+    getSankeyData();
+
+    barData.value = [
+      { label: "Category A", value: 30 },
+      { label: "Category B", value: 50 },
+      { label: "Category C", value: 70 },
+    ]
+});
+
 </script>
 
 <template>
@@ -96,7 +107,7 @@ const sendMessage = async () => {
 
   <div class="dashboard">
       <header class="dashboard-header">
-      <h1>Dashboard</h1>
+      <h1> 📊 Dashboard to check my deep love❤️ for WIRELESS COMMUNICATIONS 🛜  </h1>
       </header>
       <main class="dashboard-content">
           <h2> 💌 통신에 대한 나의 사랑은 얼마일까 (❁´◡`❁) </h2>
@@ -104,58 +115,55 @@ const sendMessage = async () => {
             <Circular/>
           </div>
 
-          <!-- 첫 번째 행 -->
-          <div class='chart-container'>
-            <div class="chart-item">
-                <h2> 📚 내가 관심있게 볼만한 표준 시리즈는 무엇일까 😲 </h2>
-                <SankeyDiagram />
-            </div>
-            <div class='chart-item'>
-              <h2> 💨 내가 관심있게 보았던 키워드들은 무엇이 있을까 🤔 </h2>
-              <WordCloud :words="wcInfo" />
-            </div>
-          </div>
-
-          <!-- 두 번째 행 -->
+          <h2> 💌 나에게 맞는 사랑🥰==통신🛜 표준은 무엇일까? (❁´◡`❁) </h2>
           <div class="row">
-              <section class="spider-content">
-                  <h2>Network graph</h2>
-                  <NetworkGraph/>
-              </section>
-
-              <section class="chatbot-content">
-                  <h2>Chatbot</h2>
-                  <div class="barChart">
-                    <h1>Bar graph</h1>
-                    <BarGraph :barData="barData"/>
-                  </div>
-
-                  <div class="chat-container">
-                      <!-- 채팅 메시지 영역 -->
-                      <div class="chat-messages">
-                          <!-- 메시지 목록 렌더링 -->
-                          <div
-                          class="chat-message"
-                          :class="message.sender"
-                          v-for="(message, index) in messages"
-                          :key="index"
-                          >
-                          <p>{{ message.text }}</p>
-                          </div>
-                      </div>
-
-                      <!-- 입력창 -->
-                      <div class="chat-input">
-                          <input
-                          type="text"
-                          v-model="currentMessage"
-                          placeholder="챗봇에게 메시지 입력..."
-                          @keyup.enter="sendMessage"
-                          />
-                          <button @click="sendMessage(currentMessage.value)">보내기</button>
+            <SecondRow />
+          </div>
+          
+          <h2> 💌 나만의 키워드와 선택한 통신 표준 시리즈와의 ❤️관❤️계❤️ </h2>
+          <div class="row">
+            <NetworkGraph/>
+          </div>
+          
+          <h2> 💌 챗봇🤖과의 대화를 통해 표준을 추천받아봐요! </h2>
+          <div class="row">
+            <div class="main-chart-container">
+              <div class="main-chart-item">
+                <h2> 🤖 챗봇과 자유롭게 얘기해 보아요 🤖 </h2>
+                <div class="chat-container">
+                  <!-- 채팅 메시지 영역 -->
+                  <div class="chat-messages">
+                      <!-- 메시지 목록 렌더링 -->
+                      <div
+                      class="chat-message"
+                      :class="message.sender"
+                      v-for="(message, index) in messages"
+                      :key="index"
+                      >
+                      <p>{{ message.text }}</p>
                       </div>
                   </div>
-              </section>
+
+                  <!-- 입력창 -->
+                  <div class="chat-input">
+                      <input
+                      type="text"
+                      v-model="currentMessage"
+                      placeholder="챗봇에게 메시지 입력..."
+                      @keyup.enter="sendMessage"
+                      />
+                      <button @click="sendMessage(currentMessage.value)">보내기</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="main-chart-container">
+              <div class="main-chart-item">
+                <h2> 내 입력과 추천된 문서들과의 유사도 </h2>
+                <BarGraph :barData="barData"/>
+              </div>
+            </div>
           </div>
       </main>
       <footer class="dashboard-footer">
@@ -165,38 +173,39 @@ const sendMessage = async () => {
 </template>
 
 <style scoped>
-.dashboard-content {
-  display: flex;
-  flex-direction: column;
-  gap: 30px; /* 섹션 간의 간격을 넓힘 */
-  padding: 20px;
-  background-color: #f9f9f9; /* 전체 배경색 */
+
+.main-chart-container {
+  display: flex; /* Flexbox로 변경 */
+  justify-content: space-between; /* 요소 간 간격 균등 분배 */
+  align-items: stretch; /* 모든 요소가 동일한 높이를 가짐 */
+  gap: 20px;
+  width: 100%;
+  height: 100%; /* 부모 컨테이너 높이에 맞춤 */
 }
 
-/* ---------------------------------------------------------------  */
-.chart-container {
-  display: grid; /* 2x2 구조를 만들기 위해 grid 사용 */
-  grid-template-columns: 1fr 1fr; /* 두 열로 나눔 */
-  gap: 20px; /* 아이템 간 간격 */
-  width: 100%;
-  height: 100%;
-  padding: 20px;
-  background-color: #f9f9f9; /* 배경색 추가 */
-  border-radius: 10px;
-}
-.chart-item {
+.main-chart-item {
+  flex: 1; /* 모든 요소가 동일한 비율로 공간을 차지 */
   display: flex;
   flex-direction: column;
-  justify-content: flex-start; /* 위쪽에 정렬 */
+  justify-content: flex-start;
   align-items: center;
-  padding: 20px;
   background-color: #ffffff;
   border: 1px solid #ddd;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   text-align: center;
+  height: 100%; /* 부모 Flex 컨테이너의 높이에 맞춤 */
 }
-.chart-item h2 {
+
+.main-chart-item:first-child {
+  margin-right: 10px; /* 첫 번째 아이템과 두 번째 아이템 사이의 간격 */
+}
+
+.main-chart-item:last-child {
+  margin-left: 10px; /* 마지막 아이템과 첫 번째 아이템 사이의 간격 */
+}
+
+.main-chart-item h2 {
   height: 50px; /* 고정된 높이 설정 */
   line-height: 50px; /* 텍스트 수직 중앙 정렬 */
   font-size: 18px;
@@ -204,7 +213,15 @@ const sendMessage = async () => {
   color: #333;
   margin-bottom: 20px;
 }
-/* ---------------------------------------------------------------  */
+
+
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 30px; /* 섹션 간의 간격을 넓힘 */
+  padding: 20px;
+  background-color: #f9f9f9; /* 전체 배경색 */
+}
 
 .row {
   display: flex;
