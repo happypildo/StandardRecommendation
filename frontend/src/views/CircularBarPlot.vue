@@ -3,17 +3,34 @@
     <!-- 설명 1 -->
     <div class="chart-item">
       <h2>🙄 요즘 트렌드에 나는 얼마나 맞춰가고 있을까 (*/ω＼*)</h2>
+      <p> ❤️❤️❤️ 색칠된 영역을 선택해 부족한 나의 사랑을 채우자! ❤️❤️❤️ </p>
       <div ref="circularPlot" class="circular-plot"></div>
     </div>
 
     <!-- 설명 2 -->
     <div class="chart-item">
       <h2>📰 통신에 사랑을 주기 위한 추천 뉴스</h2>
+      <p v-show="selectedData.name"> {{ selectedData.name }} </p>
+      <p v-show="!selectedData.name"> 키워드를 선택하세요! </p>
       <div ref="detailsContainer" class="details-container" v-show="selectedData">
-        <div v-for="(news, index) in displayedNews" :key="index" class="news-box">
+        <div
+          v-for="(news, index) in displayedNews"
+          :key="index"
+          class="news-box"
+          @click="openModal(news)"
+        >
           <h3>📰 추천 뉴스 - {{ news.title }}</h3>
-          <p>📜 내용: {{ news.content }}</p>
+          <p>📜 내용: {{ news.content.substring(0, 300) }}...</p>
         </div>
+      </div>
+    </div>
+
+    <!-- 모달 -->
+    <div v-if="isModalOpen" class="modal-overlay" @click="closeModal">
+      <div class="modal-content" @click.stop>
+        <h2>{{ selectedNews.title }}</h2>
+        <p>{{ selectedNews.content }}</p>
+        <button class="close-button" @click="closeModal">닫기</button>
       </div>
     </div>
   </div>
@@ -24,17 +41,36 @@ import { ref, onMounted, watch, computed } from "vue";
 import * as d3 from "d3";
 import { useDashBoardStore } from "@/stores/dashboard";
 import axios from 'axios'
-const API_URL = 'http://127.0.0.1:8000'
+
+const API_URL = 'http://127.0.0.1:8000';
 
 const dashboardStore = useDashBoardStore();
 const trendsData = computed(() => dashboardStore.trendsData || []);
 const getNewsTrendsData = () => {
   dashboardStore.getNewsTrendsData();
 };
+
 const chart = ref(null);
 const circularPlot = ref(null);
 let selectedData = ref({});
-const displayedNews = ref([{title: "키워드를 선택해서", content: "추천 뉴스를 받아보세요."}]); // 표시할 뉴스 데이터
+const displayedNews = ref([{ title: "키워드를 선택해서", content: "추천 뉴스를 받아보세요." }]); // 표시할 뉴스 데이터
+
+// 모달 관련 데이터
+const isModalOpen = ref(false);
+const selectedNews = ref({});
+
+// 모달 열기
+const openModal = (news) => {
+  selectedNews.value = news;
+  isModalOpen.value = true;
+};
+
+// 모달 닫기
+const closeModal = () => {
+  isModalOpen.value = false;
+  selectedNews.value = {};
+};
+
 
 // Circular Barplot 렌더링 함수
 const drawCircularBarplot = (data, offsetX = 0, id = "primary") => {
@@ -44,18 +80,17 @@ const drawCircularBarplot = (data, offsetX = 0, id = "primary") => {
   const innerRadius = 100;
   const outerRadius = Math.min(width, height) / 2 - 20;
 
+  // 기존 SVG 제거
   d3.select(circularPlot.value).select(`#${id}`).remove();
+
   const svg = d3
     .select(circularPlot.value)
     .append("svg")
     .attr("id", id)
-    .attr("width", width + 300) // 범례 공간 추가
+    .attr("width", width)
     .attr("height", height)
     .append("g")
-    .attr(
-      "transform",
-      `translate(${width / 2 + offsetX}, ${height / 2})`
-    );
+    .attr("transform", `translate(${width / 2.6 + offsetX}, ${height / 2})`);
 
   // X 축 (각도를 위한 스케일)
   const x = d3
@@ -66,13 +101,8 @@ const drawCircularBarplot = (data, offsetX = 0, id = "primary") => {
   // Y 축 (반지름 스케일)
   const y = d3.scaleLinear().range([innerRadius, outerRadius]).domain([0, 1]);
 
-  // // 색상 스케일
-  // const color = d3
-  //   .scaleOrdinal()
-  //   .range(["#4caf50", "#2196f3", "#ff9800", "#e91e63", "#9c27b0", "#00bcd4", "#ffc107", "#3f51b5"])
-  //   .domain(data.map((d) => d.name));
+  // 색상 스케일
   const color = d3.scaleOrdinal(d3.schemeCategory10).domain(data.map((d) => d.name));
-
 
   // Full value bar 추가 (투명도 처리)
   svg
@@ -81,18 +111,18 @@ const drawCircularBarplot = (data, offsetX = 0, id = "primary") => {
     .data(data)
     .join("path")
     .attr("fill", (d) => color(d.name))
-    .attr("opacity", 0.2) // 투명도 처리
+    .attr("opacity", 0.2)
     .attr(
       "d",
       d3
         .arc()
         .innerRadius(innerRadius)
-        .outerRadius(outerRadius) // 최대치 반지름 사용
+        .outerRadius(outerRadius)
         .startAngle((d) => x(d.name))
         .endAngle((d) => x(d.name) + x.bandwidth())
         .padAngle(0.01)
         .padRadius(innerRadius)
-    );
+    ).on("click", (event, d) => handleBarClick(d)); // 클릭 이벤트 추가
 
   // 실제 데이터 bar 추가
   svg
@@ -101,19 +131,38 @@ const drawCircularBarplot = (data, offsetX = 0, id = "primary") => {
     .data(data)
     .join("path")
     .attr("fill", (d) => color(d.name))
-    .attr(
-      "d",
-      d3
+    .attr("d", d3.arc().innerRadius(innerRadius).outerRadius(innerRadius)) // 시작 위치 설정
+    .on("mouseover", (event, d) => {
+      // Hover 효과
+      d3.select(event.target)
+        .transition()
+        .duration(200)
+        .attr("fill", "orange");
+    })
+    .on("mouseout", (event, d) => {
+      // Hover 효과 초기화
+      d3.select(event.target)
+        .transition()
+        .duration(200)
+        .attr("fill", color(d.name));
+    })
+    .transition() // 트랜지션 추가
+    .duration(2000)
+    .attrTween("d", function (d) {
+    const interpolate = d3.interpolate(innerRadius, y(d.value)); // 0에서 value까지
+    return function (t) {
+      return d3
         .arc()
         .innerRadius(innerRadius)
-        .outerRadius((d) => y(d.value)) // 실제 값에 따라 반지름 조정
-        .startAngle((d) => x(d.name))
-        .endAngle((d) => x(d.name) + x.bandwidth())
+        .outerRadius(interpolate(t)) // 현재 진행 상태 반영
+        .startAngle(x(d.name))
+        .endAngle(x(d.name) + x.bandwidth())
         .padAngle(0.01)
-        .padRadius(innerRadius)
-    )
-    .on("click", (event, d) => handleBarClick(d)); // 클릭 이벤트 추가
+        .padRadius(innerRadius)();
+    };
+  });
 
+  // 텍스트 추가
   svg
     .append("g")
     .selectAll("text")
@@ -121,16 +170,19 @@ const drawCircularBarplot = (data, offsetX = 0, id = "primary") => {
     .join("text")
     .attr("text-anchor", "middle")
     .attr("transform", (d) => {
-      const angle = (x(d.name) + x.bandwidth() / 2); // 중심 각도
-      const radius = y(d.value) + 30; // 막대 끝보다 약간 바깥쪽에 위치
+      const angle = x(d.name) + x.bandwidth() / 2;
+      const radius = y(d.value) + 40;
       const xPos = Math.sin(angle) * radius;
       const yPos = -Math.cos(angle) * radius;
-      return `translate(${xPos}, ${yPos})`; // x, y 좌표로 변환
+      return `translate(${xPos}, ${yPos})`;
     })
-    .text((d) => `${(d.value * 100).toFixed(1)}%`) // 값에 100을 곱해 퍼센트로 표시
+    .text((d) => `${(d.value * 100).toFixed(1)}%`)
     .style("font-size", "20px")
-    .style("fill", "#333");
-
+    .style("fill", "#333")
+    .style("opacity", 0)
+    .transition() // 텍스트 트랜지션
+    .duration(1000)
+    .style("opacity", 1);
 
   // 범례 추가
   const legend = svg
@@ -165,20 +217,12 @@ const handleBarClick = async (data) => {
   selectedData.value = data;
 
   try {
-    // 서버 요청
     const response = await axios.post(`${API_URL}/crawl/rec_news/`, {
-      name: data.name, // 필요한 데이터를 요청에 포함
+      name: data.name,
     });
 
-// [  서버 리스폰스 형태
-//   { "content": "첫 번째 뉴스 내용" },
-//   { "content": "두 번째 뉴스 내용" },
-//   { "content": "세 번째 뉴스 내용" }
-// ]
-
-    // 서버로부터 받은 데이터 처리
     if (response.status === 200 && response.data) {
-      displayedNews.value = response.data.map((item, index) => ({
+      displayedNews.value = response.data.map((item) => ({
         title: `${item.title}`,
         content: `${item.content}`,
       }));
@@ -192,7 +236,6 @@ const handleBarClick = async (data) => {
     }
   } catch (error) {
     console.error("서버 요청 중 오류 발생:", error);
-    // 오류 발생 시 기본 데이터를 표시하거나 사용자에게 알림
     displayedNews.value = [
       { content: `${data.name} 관련 뉴스 1 (오류 발생)` },
       { content: `${data.name} 관련 뉴스 2 (오류 발생)` },
@@ -218,7 +261,7 @@ watch(trendsData, (newData) => {
 <style scoped>
 .chart-container {
   display: grid; /* 2x2 구조를 만들기 위해 grid 사용 */
-  grid-template-columns: 1fr 1fr; /* 두 열로 나눔 */
+  grid-template-columns: 7fr 3fr; /* 두 열로 나눔 */
   gap: 20px; /* 아이템 간 간격 */
   width: 100%;
   height: 100%;
@@ -239,19 +282,9 @@ watch(trendsData, (newData) => {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   text-align: center;
 }
-
-.chart-item h2 {
-  height: 50px; /* 고정된 높이 설정 */
-  line-height: 50px; /* 텍스트 수직 중앙 정렬 */
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 20px;
-}
-
 .circular-plot {
   width: 100%;
-  height: 600px; /* Circular Plot의 높이 조정 */
+  height: 600px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -260,7 +293,7 @@ watch(trendsData, (newData) => {
 .details-container {
   width: 100%;
   max-height: 600px;
-  overflow-y: auto; /* 스크롤 추가 */
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -273,16 +306,99 @@ watch(trendsData, (newData) => {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   text-align: left;
   border: 1px solid #ddd;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
-.news-box h3 {
-  font-size: 16px;
+.news-box:hover {
+  background-color: #eaeaea;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7); /* 어둡게 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out; /* 페이드 애니메이션 */
+}
+
+.modal-content {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 15px;
+  max-width: 800px;
+  width: 90%;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  transform: scale(0.9);
+  animation: scaleUp 0.3s ease-in-out forwards; /* 팝업 효과 */
+}
+
+.modal-content h2 {
+  margin-bottom: 15px;
+  font-size: 24px;
   font-weight: bold;
-  margin-bottom: 10px;
+  color: #333;
 }
 
-.news-box p {
-  font-size: 14px;
-  color: #555;
+.modal-content p {
+  font-size: 16px;
+  color: #333;
+  line-height: 1.8;
+  text-align: justify; /* 텍스트 정렬 */
+  max-height: 60vh; /* 스크롤 제한 */
+  overflow-y: auto;
+  padding: 20px; /* 내부 여백 추가 */
+  background-color: #f9f9f9; /* 박스 배경색 */
+  border-radius: 10px; /* 둥근 모서리 */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 박스 그림자 */
+  margin-bottom: 15px; /* 여러 문단 간 간격 */
+}
+
+.close-button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  font-weight: bold;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.close-button:hover {
+  color: #333;
+}
+
+.close-button:focus {
+  outline: none;
+}
+
+/* 애니메이션 */
+@keyframes fadeIn {
+  from {
+    background-color: rgba(0, 0, 0, 0);
+  }
+  to {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    transform: scale(0.9);
+  }
+  to {
+    transform: scale(1);
+  }
 }
 </style>

@@ -24,7 +24,7 @@ def get_top_news_by_keyword(name):
     for keyword in keywords:
         news_list.append({
             "title": keyword.news.title,
-            "content": keyword.news.content[:100] + "..."
+            "content": keyword.news.content
         })
     return news_list
 

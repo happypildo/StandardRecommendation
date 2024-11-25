@@ -1,5 +1,11 @@
 <template>
-  <div ref="chart" class="chart-container"></div>
+  <div class="chart-container">
+    <div class="chart-item">
+      <h2>(❁´◡`❁) 우와 - 내가 이렇게 통신에 관심이 많다니! (*/ω＼*)</h2>
+      <p> ❤️❤️❤️ 최 강 통 신 네 트 워 크 ❤️❤️❤️ </p>
+      <div ref="chart" class="network-graph"></div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -141,10 +147,41 @@ watch(networkData, (newData) => {
 </script>
 
 <style scoped>
-.chart-container {
+.network-graph {
   width: 100%;
   height: 100%;
   min-height: 500px;
   background-color: #f9f9f9;
 }
+.chart-container {
+  gap: 20px; /* 아이템 간 간격 */
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  background-color: #f9f9f9; /* 배경색 추가 */
+  border-radius: 10px;
+}
+
+.chart-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* 위쪽에 정렬 */
+  align-items: center;
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.chart-item h2 {
+  height: 50px; /* 고정된 높이 설정 */
+  line-height: 50px; /* 텍스트 수직 중앙 정렬 */
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+}
+
 </style>
