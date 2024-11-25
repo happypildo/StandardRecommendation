@@ -20,6 +20,7 @@ from langchain.docstore.document import Document
 from langchain.schema import HumanMessage, SystemMessage
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
+from sentence_transformers import SentenceTransformer
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 openai.api_key = OPENAI_API_KEY

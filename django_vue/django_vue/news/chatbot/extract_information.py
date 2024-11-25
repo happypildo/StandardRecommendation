@@ -7,12 +7,35 @@ import re
 import glob
 
 from pprint import pprint
-
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
 class Extractor:
-    def __init__(self, target_path):
+    def __init__(self, target_path=""):
         self.extracted_data = []
         self.target_path = target_path
+        self.keywords = [
+            "Resource/RAN Slicing", "Quality of Service", "Latency", "URLLC", "eMBB", "5G", "5G Core", 
+            "Edge computing", "Handover", "VoLTE", "VoNR", "SIP", "Beamforming", "Massive MIMO",
+            "Dynamic Spectrum Sharing (DSS)", "Small cells", "Audio codec", "VR/AR streaming", "Real-time encoding", "RF calibration",
+            "UE capabilities", "Dual connectivity", "Load balancing", "Interface testing",
+            "Signaling protocols", "Authentication", "Security", "Fault tolerance", "Internet of Things (IoT)",
+            "Compliance testing", "Performance testing", "Sub-6 GHz", "mmWave", "Carrier Aggregation",
+            "Ultra-low latency", "Private",  "Media optimization", "Adaptive streaming", "Spectrum efficiency", "Interference management", 
+            "Mobility Management", "Test equipment", "Access Network", "Bandwidth",
+            "Core Network", "Evolved Packet Core (EPC)", "Heterogeneous", "Spectrum efficiency", "Machine Type Communication (MTC)", 
+            "Function Virtualization (NFV)", "Orthogonal Frequency Division Multiplexing (OFDM)", "Packet Data Convergence Protocol (PDCP)",
+            "Quality of Experience (QoE)", "Radio Resource Control (RRC)", "Non-Terrestrial Netowkr (NTN)",
+            "Subscriber Identity Module (SIM)", "Time Division Duplex (TDD)", "User Equipment (UE)",
+            "Wireless Local Area Network (WLAN)", "Enhanced Mobile Broadband (eMBB)", "Unmanned-Aireal Vehicle", "Vehicle communications (V2X, V2V)",
+            "Self-Organizing Networks (SON)", "Licensed Assisted Access (LAA)", 
+            "Artificial Intelligence (AI)", "Machine Learning (ML)", "Cloud RAN (C-RAN)", "Open RAN (O-RAN)",
+            "Network Automation", "Software-Defined Networking (SDN)", "6G"
+        ]
+        self.model = SentenceTransformer("pritamdeka/S-BioBert-snli-multinli-stsb")
+        self.keyword_embeddings = self.model.encode(self.keywords)
+
 
     def is_valid_title(self, str):
         # 정규 표현식 패턴 정의
@@ -26,7 +49,7 @@ class Extractor:
 
     def extract_content_from_pdf(self):
         pdf_files = glob.glob(f"{self.target_path}/*.pdf")
-
+        extracted_data = []
         for filename in pdf_files:
             file_path = os.path.abspath(f"./{filename}")
 
@@ -89,17 +112,37 @@ class Extractor:
 
                 print()
                 print(", ".join(processed_indices))
-                print()
-            
-                self.extracted_data.append({
+                
+
+                indices_embedding = self.model.encode(", ".join(processed_indices))
+                similarities = cosine_similarity([indices_embedding], self.keyword_embeddings)[0]
+
+                # 관련도 높은 순으로 정렬
+                sorted_indices = np.argsort(similarities)[::-1]
+                # top_keywords = [(self.keywords[i], similarities[i]) for i in sorted_indices[:5]]
+                top_keywords = [f"{self.keywords[i]} with similarity {similarities[i]}" for i in sorted_indices[:5]]
+                top_keywords = ", ".join(top_keywords)
+                print("-"*30)
+                print(top_keywords)
+                print("-"*30)
+                # top_keywords_str = ""
+                # try:
+                #     for k, _ in top_keywords:
+                #         print(k)
+                #         top_keywords += k + ", "
+                # except:
+                #     pass
+                # print()
+
+                extracted_data.append({
                     "title": title,
                     "area": area,
                     "indices": ", ".join(processed_indices),
-                    "scope": "" 
+                    "keywords":  top_keywords
                 })
-                pprint(self.extracted_data[-1])
+                pprint(extracted_data[-1])
             except Exception as e:
                 print(e)
                 pass
         
-        return self.extracted_data
+        return extracted_data

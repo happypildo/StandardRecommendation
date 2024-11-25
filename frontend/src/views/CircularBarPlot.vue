@@ -1,29 +1,40 @@
 <template>
-  <div ref="chart" class="chart-container">
-    <!-- Circular Barplot -->
-    <div ref="circularPlot" class="circular-plot"></div>
-    <!-- Line Plot -->
-    <div ref="linePlot" class="line-plot"></div>
+  <div class="chart-container">
+    <!-- 설명 1 -->
+    <div class="chart-item">
+      <h2>🙄 요즘 트렌드에 나는 얼마나 맞춰가고 있을까 (*/ω＼*)</h2>
+      <div ref="circularPlot" class="circular-plot"></div>
+    </div>
+
+    <!-- 설명 2 -->
+    <div class="chart-item">
+      <h2>📰 통신에 사랑을 주기 위한 추천 뉴스</h2>
+      <div ref="detailsContainer" class="details-container" v-show="selectedData">
+        <div v-for="(news, index) in displayedNews" :key="index" class="news-box">
+          <h3>📰 추천 뉴스 - {{ news.title }}</h3>
+          <p>📜 내용: {{ news.content }}</p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch, computed } from "vue";
 import * as d3 from "d3";
-import axios from "axios";
 import { useDashBoardStore } from "@/stores/dashboard";
+import axios from 'axios'
+const API_URL = 'http://127.0.0.1:8000'
 
 const dashboardStore = useDashBoardStore();
 const trendsData = computed(() => dashboardStore.trendsData || []);
 const getNewsTrendsData = () => {
   dashboardStore.getNewsTrendsData();
 };
-const API_URL = "http://127.0.0.1:8000";
-
 const chart = ref(null);
 const circularPlot = ref(null);
-const linePlot = ref(null);
-let selectedData = ref(null); // 클릭한 데이터 저장
+let selectedData = ref({});
+const displayedNews = ref([{title: "키워드를 선택해서", content: "추천 뉴스를 받아보세요."}]); // 표시할 뉴스 데이터
 
 // Circular Barplot 렌더링 함수
 const drawCircularBarplot = (data, offsetX = 0, id = "primary") => {
@@ -33,15 +44,12 @@ const drawCircularBarplot = (data, offsetX = 0, id = "primary") => {
   const innerRadius = 100;
   const outerRadius = Math.min(width, height) / 2 - 20;
 
-  // 기존 그래프 제거
   d3.select(circularPlot.value).select(`#${id}`).remove();
-
-  // SVG 생성
   const svg = d3
     .select(circularPlot.value)
     .append("svg")
-    .attr("id", id) // ID로 그래프 구분
-    .attr("width", width)
+    .attr("id", id)
+    .attr("width", width + 300) // 범례 공간 추가
     .attr("height", height)
     .append("g")
     .attr(
@@ -49,31 +57,44 @@ const drawCircularBarplot = (data, offsetX = 0, id = "primary") => {
       `translate(${width / 2 + offsetX}, ${height / 2})`
     );
 
-  // 각도 계산을 위한 X 축 스케일
+  // X 축 (각도를 위한 스케일)
   const x = d3
     .scaleBand()
     .range([0, 2 * Math.PI])
     .domain(data.map((d) => d.name));
 
-  // 막대 길이를 위한 Y 축 스케일
+  // Y 축 (반지름 스케일)
   const y = d3.scaleLinear().range([innerRadius, outerRadius]).domain([0, 1]);
 
-  // 색상 스케일
-  const color = d3
-    .scaleOrdinal()
-    .range([
-      "#4caf50",
-      "#2196f3",
-      "#ff9800",
-      "#e91e63",
-      "#9c27b0",
-      "#00bcd4",
-      "#ffc107",
-      "#3f51b5",
-    ])
-    .domain(data.map((d) => d.name));
+  // // 색상 스케일
+  // const color = d3
+  //   .scaleOrdinal()
+  //   .range(["#4caf50", "#2196f3", "#ff9800", "#e91e63", "#9c27b0", "#00bcd4", "#ffc107", "#3f51b5"])
+  //   .domain(data.map((d) => d.name));
+  const color = d3.scaleOrdinal(d3.schemeCategory10).domain(data.map((d) => d.name));
 
-  // 막대 추가
+
+  // Full value bar 추가 (투명도 처리)
+  svg
+    .append("g")
+    .selectAll("path")
+    .data(data)
+    .join("path")
+    .attr("fill", (d) => color(d.name))
+    .attr("opacity", 0.2) // 투명도 처리
+    .attr(
+      "d",
+      d3
+        .arc()
+        .innerRadius(innerRadius)
+        .outerRadius(outerRadius) // 최대치 반지름 사용
+        .startAngle((d) => x(d.name))
+        .endAngle((d) => x(d.name) + x.bandwidth())
+        .padAngle(0.01)
+        .padRadius(innerRadius)
+    );
+
+  // 실제 데이터 bar 추가
   svg
     .append("g")
     .selectAll("path")
@@ -85,7 +106,7 @@ const drawCircularBarplot = (data, offsetX = 0, id = "primary") => {
       d3
         .arc()
         .innerRadius(innerRadius)
-        .outerRadius((d) => y(d.value))
+        .outerRadius((d) => y(d.value)) // 실제 값에 따라 반지름 조정
         .startAngle((d) => x(d.name))
         .endAngle((d) => x(d.name) + x.bandwidth())
         .padAngle(0.01)
@@ -93,7 +114,6 @@ const drawCircularBarplot = (data, offsetX = 0, id = "primary") => {
     )
     .on("click", (event, d) => handleBarClick(d)); // 클릭 이벤트 추가
 
-  // 이름 라벨 추가
   svg
     .append("g")
     .selectAll("text")
@@ -101,132 +121,86 @@ const drawCircularBarplot = (data, offsetX = 0, id = "primary") => {
     .join("text")
     .attr("text-anchor", "middle")
     .attr("transform", (d) => {
-      const angle = (x(d.name) + x.bandwidth() / 2) * (180 / Math.PI) - 90;
-      const radius = outerRadius + 20;
-      return `rotate(${angle}) translate(${radius}, 0)`;
+      const angle = (x(d.name) + x.bandwidth() / 2); // 중심 각도
+      const radius = y(d.value) + 30; // 막대 끝보다 약간 바깥쪽에 위치
+      const xPos = Math.sin(angle) * radius;
+      const yPos = -Math.cos(angle) * radius;
+      return `translate(${xPos}, ${yPos})`; // x, y 좌표로 변환
     })
-    .text((d) => d.name)
-    .style("font-size", "12px")
+    .text((d) => `${(d.value * 100).toFixed(1)}%`) // 값에 100을 곱해 퍼센트로 표시
+    .style("font-size", "20px")
     .style("fill", "#333");
+
+
+  // 범례 추가
+  const legend = svg
+    .append("g")
+    .attr("transform", `translate(${outerRadius + 40}, ${-outerRadius})`);
+
+  data.forEach((d, i) => {
+    const legendItem = legend
+      .append("g")
+      .attr("transform", `translate(0, ${i * 50})`);
+
+    legendItem
+      .append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", 15)
+      .attr("height", 15)
+      .attr("fill", color(d.name));
+
+    legendItem
+      .append("text")
+      .attr("x", 20)
+      .attr("y", 12)
+      .text(d.name)
+      .style("font-size", "18px")
+      .style("fill", "#333");
+  });
 };
 
-// 클릭 이벤트 처리
-const handleBarClick = async (d) => {
-  console.log(`Clicked on bar: ${d.name} with value: ${d.value}`);
-  selectedData.value = d; // 클릭된 데이터 저장
 
-  // Circular Barplot을 왼쪽으로 이동 (절대 위치로 변경)
-  const circularPlotWidth = circularPlot.value.getBoundingClientRect().width;
-  d3.select(circularPlot.value)
-    .transition()
-    .duration(500)
-    // .style("transform", `translate(-${circularPlotWidth / 8}px, 0)`);
+const handleBarClick = async (data) => {
+  selectedData.value = data;
 
-  // 새로운 데이터를 가져와 Line Plot 그리기
-  const newData = await generateSecondaryData(d);
-  if (newData && newData.length > 0) {
-    drawLinePlot(newData); // Line Plot 생성
-  } else {
-    console.error("No data received for Line Plot");
-  }
-};
-
-// 클릭된 데이터 기반으로 새 데이터 생성
-const generateSecondaryData = async (clickedData) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/crawl/lineplot/${clickedData.name}/`
-    );
-    if (response.status === 200) {
-      console.log("Data fetched successfully:", response.data);
-      return response.data;
+    // 서버 요청
+    const response = await axios.post(`${API_URL}/crawl/rec_news/`, {
+      name: data.name, // 필요한 데이터를 요청에 포함
+    });
+
+// [  서버 리스폰스 형태
+//   { "content": "첫 번째 뉴스 내용" },
+//   { "content": "두 번째 뉴스 내용" },
+//   { "content": "세 번째 뉴스 내용" }
+// ]
+
+    // 서버로부터 받은 데이터 처리
+    if (response.status === 200 && response.data) {
+      displayedNews.value = response.data.map((item, index) => ({
+        title: `${item.title}`,
+        content: `${item.content}`,
+      }));
     } else {
-      console.error(
-        "Error fetching data:",
-        response.status,
-        response.statusText
-      );
-      return [];
+      console.error("서버에서 데이터를 받지 못했습니다.");
+      displayedNews.value = [
+        { content: `${data.name} 관련 뉴스 1` },
+        { content: `${data.name} 관련 뉴스 2` },
+        { content: `${data.name} 관련 뉴스 3` },
+      ];
     }
   } catch (error) {
-    console.error("Error occurred while fetching data:", error);
-    return [];
+    console.error("서버 요청 중 오류 발생:", error);
+    // 오류 발생 시 기본 데이터를 표시하거나 사용자에게 알림
+    displayedNews.value = [
+      { content: `${data.name} 관련 뉴스 1 (오류 발생)` },
+      { content: `${data.name} 관련 뉴스 2 (오류 발생)` },
+      { content: `${data.name} 관련 뉴스 3 (오류 발생)` },
+    ];
   }
 };
 
-// Line Plot 그리기
-const drawLinePlot = (data) => {
-  if (!linePlot.value) return;
-
-  const container = linePlot.value.getBoundingClientRect();
-  const width = container.width || 600;
-  const height = container.height || 600; // container 높이를 기준으로 설정
-  const margin = { top: 50, right: 50, bottom: 50, left: 50 };
-  // const container = linePlot.value.getBoundingClientRect();
-  // const width = container.width || 600;
-  // const height = 300;
-
-  // 기존 Line Plot 제거
-  d3.select(linePlot.value).select("svg").remove();
-
-  // SVG 생성
-  const svg = d3
-    .select(linePlot.value)
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .style("background-color", "#f9f9f9");
-
-  // X 축 스케일 (user_id 기준)
-  const x = d3
-    .scalePoint()
-    .domain(data.map((d) => d.user_id))
-    .range([50, width - 50]);
-
-  // Y 축 스케일 (total_clicks 기준)
-  const y = d3
-    .scaleLinear()
-    .domain([0, d3.max(data, (d) => d.total_clicks)])
-    .range([height - 50, 50]);
-
-  // X 축 추가
-  svg
-    .append("g")
-    .attr("transform", `translate(0, ${height - 50})`)
-    .call(d3.axisBottom(x).tickFormat((d) => `User ${d}`));
-
-  // Y 축 추가
-  svg.append("g").attr("transform", "translate(50, 0)").call(d3.axisLeft(y));
-
-  // 선 추가
-  const line = d3
-    .line()
-    .x((d) => x(d.user_id))
-    .y((d) => y(d.total_clicks))
-    .curve(d3.curveMonotoneX);
-
-  svg
-    .append("path")
-    .datum(data)
-    .attr("fill", "none")
-    .attr("stroke", "#2196f3")
-    .attr("stroke-width", 2)
-    .attr("d", line);
-
-  // 점 추가
-  svg
-    .selectAll("circle")
-    .data(data)
-    .join("circle")
-    .attr("cx", (d) => x(d.user_id))
-    .attr("cy", (d) => y(d.total_clicks))
-    .attr("r", 5)
-    .attr("fill", (d) => (d.is_current_user ? "#ff5722" : "#4caf50"))
-    .attr("stroke", "#333")
-    .attr("stroke-width", 1.5);
-};
-
-// 컴포넌트 마운트 시 Circular Barplot 렌더링
 onMounted(() => {
   getNewsTrendsData();
   if (trendsData.value.length) {
@@ -234,7 +208,6 @@ onMounted(() => {
   }
 });
 
-// 데이터 변경 시 Circular Barplot 업데이트
 watch(trendsData, (newData) => {
   if (newData.length) {
     drawCircularBarplot(newData, 0, "primary");
@@ -244,22 +217,72 @@ watch(trendsData, (newData) => {
 
 <style scoped>
 .chart-container {
-  display: flex;
-  flex-direction: row;
+  display: grid; /* 2x2 구조를 만들기 위해 grid 사용 */
+  grid-template-columns: 1fr 1fr; /* 두 열로 나눔 */
+  gap: 20px; /* 아이템 간 간격 */
   width: 100%;
   height: 100%;
-  min-height: 500px;
-  background-color: #f9f9f9;
-  position: relative;
+  padding: 20px;
+  background-color: #f9f9f9; /* 배경색 추가 */
+  border-radius: 10px;
+}
+
+.chart-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* 위쪽에 정렬 */
+  align-items: center;
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.chart-item h2 {
+  height: 50px; /* 고정된 높이 설정 */
+  line-height: 50px; /* 텍스트 수직 중앙 정렬 */
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
 }
 
 .circular-plot {
-  flex: 1;
-  transition: transform 0.5s ease;
+  width: 100%;
+  height: 600px; /* Circular Plot의 높이 조정 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.line-plot {
-  flex: 1;
-  padding-left: 20px;
+.details-container {
+  width: 100%;
+  max-height: 600px;
+  overflow-y: auto; /* 스크롤 추가 */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.news-box {
+  background-color: #f5f5f5;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+.news-box h3 {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.news-box p {
+  font-size: 14px;
+  color: #555;
 }
 </style>
