@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { defineStore } from 'pinia'
 import { useUserStore } from './user'
@@ -10,37 +10,37 @@ export const useBoardStore = defineStore('board', () => {
   const userStore = useUserStore()
   const boards = ref([])
 
-  const getBoards = function() {
-    axios({
-      method: 'get',
-      url: `${API_URL}/api/v1/`
-    }).then((response) => {
-      console.log(response)
+  const getBoards = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/v1/`)
       boards.value = response.data
-    }).catch((error) => {
-      console.log(error)
-    })
+    } catch (error) {
+      console.error('게시글 목록 가져오기 실패:', error)
+    }
   }
 
-  const createBoard = function(payload) {
-    const { title, content } = payload
-
-    axios({
-      method: 'post',
-      url:  `${API_URL}/api/v1/`,
-      data: {
-        title,
-        content
-      },
-      headers: {
-        Authorization: `Token ${userStore.token}`
+  const createBoard = async (payload) => {
+    try {
+      const { title, content } = payload
+      const token = userStore.getToken // getter를 통해 토큰 가져오기
+      if (!token) {
+        throw new Error('유효한 토큰이 없습니다.')
       }
-    }).then((response) => {
-      alert("게시글 생성 완료")
+
+      await axios.post(
+        `${API_URL}/api/v1/`,
+        { title, content },
+        {
+          headers: {
+            Authorization: `Token ${token}`,
+          },
+        }
+      )
+      alert('게시글 생성 완료')
       router.push('/')
-    }).catch((error) => {
-      console.log(error)
-    })
+    } catch (error) {
+      console.error('게시글 생성 실패:', error)
+    }
   }
 
   return { boards, getBoards, createBoard }

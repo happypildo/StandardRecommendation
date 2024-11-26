@@ -7,10 +7,12 @@ from .serializers import BoardListSerializer, BoardSerializer, CommentSerializer
 from .models import Board, Favorite, Comment
 
 @api_view(['GET', 'POST'])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+# @authentication_classes([TokenAuthentication])
+# @permission_classes([IsAuthenticated])
 def board_list(request):
     if request.method == 'POST':
+        print(f"User authenticated: {request.user.is_authenticated}")  # 디버깅 로그
+        print(f"User: {request.user}")  # 사용자 정보 로그
         serializer = BoardListSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(writer=request.user)
