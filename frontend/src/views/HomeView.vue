@@ -31,15 +31,16 @@ const goToBoardDetail = (id) => {
   <div class="container mt-5">
     <header class="d-flex justify-content-between align-items-center mb-4">
       <h1 class="h3">게시판</h1>
-      <div v-if="userStore.loginUsername">
-        <span class="text-muted me-3">환영합니다, {{ userStore.loginUsername }}님!</span>
+      <div v-if="userStore.user">
+        <span class="text-muted me-3">환영합니다, {{ userStore.user }}님!</span>
         <button 
           class="btn btn-primary"
           @click="goCreateBoard"
         >
           + 글쓰기
-        </button>
-      </div>
+  </button>
+</div>
+
     </header>
 
     <section>

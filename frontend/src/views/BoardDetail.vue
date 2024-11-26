@@ -91,12 +91,12 @@ const formatDate = (dateString) => {
           <strong>작성일:</strong> {{ formatDate(board.created_at) }}
         </p>
 
-        <button 
+        <!-- <button 
           @click="toggleFavorite" 
           class="btn btn-outline-primary mt-3"
         >
           {{ board.isFavorite ? '즐겨찾기 삭제' : '즐겨찾기 추가' }}
-        </button>
+        </button> -->
       </div>
     </div>
 

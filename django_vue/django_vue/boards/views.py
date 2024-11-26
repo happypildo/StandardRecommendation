@@ -7,6 +7,8 @@ from .serializers import BoardListSerializer, BoardSerializer, CommentSerializer
 from .models import Board, Favorite, Comment
 
 @api_view(['GET', 'POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def board_list(request):
     if request.method == 'POST':
         serializer = BoardListSerializer(data=request.data)

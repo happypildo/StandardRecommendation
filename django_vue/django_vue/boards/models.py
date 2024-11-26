@@ -7,10 +7,11 @@ User = settings.AUTH_USER_MODEL
 class Board(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
-    writer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="boards")
+    # writer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="boards")
+    writer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="boards")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    keyword = models.CharField((""), max_length=50)
+    keyword = models.CharField("키워드", max_length=50)
 
 # 댓글
 class Comment(models.Model):

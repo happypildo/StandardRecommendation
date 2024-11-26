@@ -7,9 +7,13 @@ import axios from 'axios'
 const boards = ref([])
 
 const router = useRouter()
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 
 // 게시글 목록을 가져오기
 onMounted(() => {
+  userStore.restoreSession()
   axios.get('http://localhost:8000/api/v1/')
     .then(response => {
       boards.value = response.data

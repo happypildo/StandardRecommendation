@@ -43,13 +43,6 @@ const router = createRouter({
       component: LogoutView,
     },
     {
-      path: '/signup',
-      name: 'signup',
-      component: SignupView,
-    },
-
-
-    {
       path: '/create-board',
       name: 'createBorad',
       component: BoardCreateView,
