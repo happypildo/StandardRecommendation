@@ -1,14 +1,14 @@
 <template>
-  <div class="chart-container">
+  <div class="c-chart-container">
     <!-- 설명 1 -->
-    <div class="chart-item">
+    <div class="c-chart-item">
       <h2>🙄 요즘 트렌드에 나는 얼마나 맞춰가고 있을까 (*/ω＼*)</h2>
       <p> ❤️❤️❤️ 색칠된 영역을 선택해 부족한 나의 사랑을 채우자! ❤️❤️❤️ </p>
       <div ref="circularPlot" class="circular-plot"></div>
     </div>
 
     <!-- 설명 2 -->
-    <div class="chart-item">
+    <div class="c-chart-item">
       <h2>📰 통신에 사랑을 주기 위한 추천 뉴스</h2>
       <p v-show="selectedData.name"> {{ selectedData.name }} </p>
       <p v-show="!selectedData.name"> 키워드를 선택하세요! </p>
@@ -259,7 +259,7 @@ watch(trendsData, (newData) => {
 </script>
 
 <style scoped>
-.chart-container {
+.c-chart-container {
   display: grid; /* 2x2 구조를 만들기 위해 grid 사용 */
   grid-template-columns: 7fr 3fr; /* 두 열로 나눔 */
   gap: 20px; /* 아이템 간 간격 */
@@ -270,7 +270,16 @@ watch(trendsData, (newData) => {
   border-radius: 10px;
 }
 
-.chart-item {
+.c-chart-item h2 {
+  height: 50px; /* 고정된 높이 설정 */
+  line-height: 50px; /* 텍스트 수직 중앙 정렬 */
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.c-chart-item {
   display: flex;
   flex-direction: column;
   justify-content: flex-start; /* 위쪽에 정렬 */
@@ -308,6 +317,10 @@ watch(trendsData, (newData) => {
   border: 1px solid #ddd;
   cursor: pointer;
   transition: background-color 0.3s;
+}
+
+.news-box h3 {
+  font-size: 20px;
 }
 
 .news-box:hover {

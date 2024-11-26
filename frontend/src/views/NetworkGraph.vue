@@ -48,14 +48,17 @@ const drawNetworkGraph = (data) => {
 
   // Force Simulation 설정
   const simulation = d3
-    .forceSimulation(data.nodes)
-    .force(
-      "link",
-      d3.forceLink(data.links).id((d) => d.id).distance((d) => 100 / d.weight) // 가중치 기반 거리
-    )
-    .force("charge", d3.forceManyBody().strength(-300))
-    .force("center", d3.forceCenter(width / 2, height / 2))
-    .on("tick", ticked);
+  .forceSimulation(data.nodes)
+  .force(
+    "link",
+    d3.forceLink(data.links).id((d) => d.id).distance(150) // 링크 거리 증가
+  )
+  .force("charge", d3.forceManyBody().strength(-500)) // 반발력 증가
+  .force("center", d3.forceCenter(width / 2, height / 2).strength(0.1)) // 중앙 정렬 약화
+  .alphaDecay(0.02) // 시뮬레이션 지속 시간 증가
+  .alphaMin(0.001)
+  .on("tick", ticked);
+
 
   // 링크 요소 추가
   const link = svg
