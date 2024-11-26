@@ -44,7 +44,7 @@ const drawSankeyDiagram = (data) => {
   const svg = d3
     .select(chart.value)
     .append("svg")
-    .attr("width", width)
+    .attr("width", width + 300)
     .attr("height", height)
     .append("g")
     .attr("transform", `translate(${margin.left}, ${margin.top})`);
@@ -55,6 +55,50 @@ const drawSankeyDiagram = (data) => {
     .size([width - margin.left - margin.right, height - margin.top - margin.bottom])(data);
 
   const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+  // 범례 추가
+  const legend = svg
+    .append("g")
+    .attr("transform", `translate(0, ${height + 20})`); // 그래프 아래쪽에 위치
+
+  const legendData = nodes.map((d) => d.name);
+  const columnCount = 5; // 두 열로 배치
+  const rowHeight = 20;
+
+  legendData.forEach((name, i) => {
+    // const column = i % columnCount;
+    let column = 0
+    if (i < 5){
+      column = 0
+    } else {
+      column = 1
+    }
+    // const row = Math.floor(i / columnCount);
+    const row = i % 5;
+
+    const legendItem = legend.append("g").attr(
+      "transform",
+      `translate(${column * (width / columnCount) + 150 * column}, ${row * rowHeight})`
+    );
+
+    // 색상 박스
+    legendItem
+      .append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", 15)
+      .attr("height", 15)
+      .attr("fill", color(name));
+
+    // 텍스트
+    legendItem
+      .append("text")
+      .attr("x", 20)
+      .attr("y", 12)
+      .text(name)
+      .style("font-size", "12px")
+      .style("fill", "#333");
+  });
 
   // 노드 그리기
   const nodeGroup = svg.append("g").selectAll("rect").data(nodes).join("g");
@@ -87,15 +131,15 @@ const drawSankeyDiagram = (data) => {
     .append("title")
     .text((d) => `${d.name}\n${d.value}`);
 
-  nodeGroup
-    .append("text")
-    .attr("x", (d) => (d.x0 < width / 2 ? d.x1 + 6 : d.x0 - 6))
-    .attr("y", (d) => (d.y0 + d.y1) / 2)
-    .attr("dy", "0.35em")
-    .attr("text-anchor", (d) => (d.x0 < width / 2 ? "start" : "end"))
-    .text((d) => d.name)
-    .style("font-size", "12px")
-    .style("fill", "#333");
+  // nodeGroup
+  //   .append("text")
+  //   .attr("x", (d) => (d.x0 < width / 2 ? d.x1 + 6 : d.x0 - 6))
+  //   .attr("y", (d) => (d.y0 + d.y1) / 2)
+  //   .attr("dy", "0.35em")
+  //   .attr("text-anchor", (d) => (d.x0 < width / 2 ? "start" : "end"))
+  //   .text((d) => d.name)
+  //   .style("font-size", "12px")
+  //   .style("fill", "#333");
 
   // 링크 그리기
   svg
@@ -107,7 +151,7 @@ const drawSankeyDiagram = (data) => {
     .attr("fill", "none")
     .attr("stroke", (d) => color(d.source.index))
     .attr("stroke-width", (d) => Math.max(1, d.width))
-    .style("opacity", 0.7)
+    .style("opacity", 0.4)
     .on("click", (event, d) => {
       // 링크 클릭 이벤트 처리
       console.log(`Clicked on link: ${d.source.name} → ${d.target.name}`);

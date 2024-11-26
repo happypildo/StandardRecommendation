@@ -91,6 +91,7 @@ class Unzip:
                         out_file_path = os.path.abspath("./" + pdf_dir + "/" + pdf_file_name)
                         subprocess.run([
                             '/Applications/LibreOffice.app/Contents/MacOS/soffice',
+                            # '/usr/bin/libreoffice',
                             '--headless',
                             '--convert-to',
                             'pdf',
@@ -105,6 +106,7 @@ class Unzip:
                         out_file_path = os.path.abspath("./" + pdf_dir + "/" + pdf_file_name)
                         subprocess.run([
                             '/Applications/LibreOffice.app/Contents/MacOS/soffice',
+                            # '/usr/bin/libreoffice',
                             '--headless',
                             '--convert-to',
                             'pdf',

@@ -15,5 +15,5 @@ urlpatterns = [
     path('relationship/', views.relation_series, name="relation_series"),
     path('chatbot/', views.chat, name="chat"),
     path('trends/', views.get_news_trends, name='get_news_trends'),
-    path('lineplot/<str:keyword>/', views.others_trends, name='others_trends'),
+    path('rec_news/', views.rec_news, name='rec_news'),
 ]

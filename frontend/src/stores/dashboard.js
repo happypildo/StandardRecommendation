@@ -28,7 +28,7 @@ export const useDashBoardStore = defineStore('dashboard', () => {
             }
         }).then((response) => {
             console.log(response.data)
-            console.log("Successfully get information!")
+            console.log("[WordCloud] Successfully get information!")
 
             // 데이터 가공: 키워드별로 그룹화 및 가중합
             const aggregatedData = response.data.reduce((acc, item) => {
@@ -40,7 +40,7 @@ export const useDashBoardStore = defineStore('dashboard', () => {
                     };
                 }
                 // 가중합 계산
-                acc[item.keyword].size += item.intensity * 100;
+                acc[item.keyword].size += item.intensity * 10;
                 return acc;
             }, {});
 

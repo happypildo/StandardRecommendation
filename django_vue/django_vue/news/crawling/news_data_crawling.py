@@ -28,7 +28,8 @@ class Crawler:
                                 options=options)
         self.driver.set_page_load_timeout(30)  
 
-        self.home_link = "https://www.3gpp.org/news-events/3gpp-news"      
+        # self.home_link = "https://www.3gpp.org/news-events/3gpp-news"      
+        self.home_link = "https://www.3gpp.org/news-events/partner-news"
 
     def crawl_data(self):
         self.driver.get(self.home_link)
@@ -74,12 +75,20 @@ class Crawler:
 
                     contents = []
                     if page_cnt == 0:
-                        parent = self.driver.find_element(By.XPATH, '//*[@id="column-id-1649676445471"]/div')
+                        parent = self.driver.find_element(By.XPATH, '//*[@id="column-wrap-id-1654004074037"]')
                     else:
+                        possible_path = [
+                            '//*[@id="sppb-addon-1654004074039"]/div/div',
+                            '//*[@id="sp-component"]/div/div[2]/div[5]/div/div[1]',
+                            '//*[@id="sp-component"]/div/div[2]/div[6]/div/div[1]',
+                        ]
                         try:
-                            parent = self.driver.find_element(By.XPATH, '//*[@id="sp-component"]/div/div[2]/div[3]/div/div[1]/div')
+                            parent = self.driver.find_element(By.XPATH, possible_path[0])
                         except:
-                            parent = self.driver.find_element(By.XPATH, '//*[@id="sp-component"]/div/div[2]/div[4]/div/div[1]/div')
+                            try:
+                                parent = self.driver.find_element(By.XPATH, possible_path[1])
+                            except:
+                                parent = self.driver.find_element(By.XPATH, possible_path[2])
 
                     children = parent.find_elements(By.XPATH, './*')
                     if len(children) == 0:

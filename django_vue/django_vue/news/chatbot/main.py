@@ -86,6 +86,7 @@ options = Options()
 options.add_argument('headless')
 
 # target_series = int(input("Enter the series number to analysis: "))
+pdf_extractor = Extractor()
 
 for target_series in range(21, 39):
     if target_series == 37:
@@ -214,19 +215,21 @@ for target_series in range(21, 39):
     pdf_file_dir = "pdf_" + unzip_class.target_directory
 
     print("Good")
-    pdf_extractor = Extractor(target_path=pdf_file_dir)
+    # pdf_extractor = Extractor(target_path=pdf_file_dir)
+    pdf_extractor.target_path = pdf_file_dir
     extracted_data = pdf_extractor.extract_content_from_pdf()
 
     # 임베딩 후 데이터베이스에 삽입...
     print("Insert to table...")
     docs = []
     for data in extracted_data:
-        content = f"제목: {data['title']}\n\n문서 영역: {data['area']}\n\n목차 정보: {data['indices']}\n\n문서의 시리즈 번호 {target_series}"
+        content = f"제목: {data['title']}\n\n문서 영역: {data['area']}\n\n목차 정보: {data['indices']}\n\n문서의 시리즈 번호 {target_series}\n\n문서의 키워드 {data['keywords']}"
 
         # 메타데이터 구성
         metadata = {
             'title': data['title'],
-            'series': target_series
+            'series': target_series,
+            'keyword': data['keywords']
         }
         data = {
             'content': content,
