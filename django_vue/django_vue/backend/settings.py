@@ -106,7 +106,9 @@ MIDDLEWARE = [
 # 원하는 주소만 CORS 허용
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
-    'http://127.0.0.1:5173'
+    'http://127.0.0.1:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5174'
 ]
 
 # 모든 주소로부터 오는 CORS 에러를 제거
