@@ -68,6 +68,28 @@ REST_FRAMEWORK = {
         # 'rest_framework.permissions.IsAuthenticated',
     ],
 }
+# REST_FRAMEWORK = {
+#     'DEFAULT_AUTHENTICATION_CLASSES': [
+#         'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT 인증
+#     ],
+#     'DEFAULT_PERMISSION_CLASSES': [
+#         'rest_framework.permissions.AllowAny',  # 권한 설정 (필요 시 변경)
+#     ],
+# }
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  # 액세스 토큰 만료 시간
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # 리프레시 토큰 만료 시간
+    'ROTATE_REFRESH_TOKENS': False,  # 리프레시 토큰을 회전시킬지 여부
+    'BLACKLIST_AFTER_ROTATION': False,  # 회전 후 블랙리스트에 추가할지 여부
+    'ALGORITHM': 'HS256',  # 사용되는 알고리즘
+    'SIGNING_KEY': SECRET_KEY,  # 서명 키
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+}
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
