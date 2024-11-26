@@ -107,7 +107,7 @@ onMounted(() => {
 
   <div class="dashboard">
       <header class="dashboard-header">
-      <h1> 📊 Dashboard to check my deep love❤️ for WIRELESS COMMUNICATIONS 🛜  </h1>
+      <h2> 📊 Dashboard to check my deep love❤️ for WIRELESS COMMUNICATIONS  </h2>
       </header>
       <main class="dashboard-content">
           <h2> 💌 통신에 대한 나의 사랑은 얼마일까 (❁´◡`❁) </h2>
@@ -221,6 +221,10 @@ onMounted(() => {
   gap: 30px; /* 섹션 간의 간격을 넓힘 */
   padding: 20px;
   background-color: #f9f9f9; /* 전체 배경색 */
+}
+
+.dashboard-content h2 {
+  font-size: 25px;
 }
 
 .row {
